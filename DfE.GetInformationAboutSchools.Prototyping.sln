@@ -5,6 +5,8 @@ VisualStudioVersion = 17.14.36908.2
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DfE.GetInformationAboutSchools.Prototyping.Core", "src\Core\DfE.GetInformationAboutSchools.Prototyping.Core.csproj", "{108E63A1-F5DC-60A5-5D2F-0AA9C14FB835}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DfE.GetInformationAboutSchools.Prototyping.Infrastructure", "src\Infrastructure\DfE.GetInformationAboutSchools.Prototyping.Infrastructure.csproj", "{1F3B048E-6CB7-B58A-F324-DFD116EF276D}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,6 +17,10 @@ Global
 		{108E63A1-F5DC-60A5-5D2F-0AA9C14FB835}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{108E63A1-F5DC-60A5-5D2F-0AA9C14FB835}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{108E63A1-F5DC-60A5-5D2F-0AA9C14FB835}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1F3B048E-6CB7-B58A-F324-DFD116EF276D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1F3B048E-6CB7-B58A-F324-DFD116EF276D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1F3B048E-6CB7-B58A-F324-DFD116EF276D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1F3B048E-6CB7-B58A-F324-DFD116EF276D}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
