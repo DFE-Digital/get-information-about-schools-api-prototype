@@ -7,6 +7,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DfE.GetInformationAboutScho
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DfE.GetInformationAboutSchools.Prototyping.Infrastructure", "src\Infrastructure\DfE.GetInformationAboutSchools.Prototyping.Infrastructure.csproj", "{1F3B048E-6CB7-B58A-F324-DFD116EF276D}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DfE.GetInformationAboutSchools.Prototyping.API", "src\API\DfE.GetInformationAboutSchools.Prototyping.API.csproj", "{AA5D9FEA-FD5F-2558-CE49-B218CCE9ADF1}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +23,10 @@ Global
 		{1F3B048E-6CB7-B58A-F324-DFD116EF276D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{1F3B048E-6CB7-B58A-F324-DFD116EF276D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{1F3B048E-6CB7-B58A-F324-DFD116EF276D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AA5D9FEA-FD5F-2558-CE49-B218CCE9ADF1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AA5D9FEA-FD5F-2558-CE49-B218CCE9ADF1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AA5D9FEA-FD5F-2558-CE49-B218CCE9ADF1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AA5D9FEA-FD5F-2558-CE49-B218CCE9ADF1}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
