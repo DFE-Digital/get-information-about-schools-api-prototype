@@ -1,4 +1,4 @@
-﻿namespace DfE.GetInformationAboutSchools.Prototyping.Core.Organisations.Application.Model;
+﻿namespace DfE.GetInformationAboutSchools.Prototyping.Core.Establishments.Application.Model;
 
 /// <summary>
 /// Represents an exception that occurs when retrieving information

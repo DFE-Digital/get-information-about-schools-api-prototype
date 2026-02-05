@@ -1,7 +1,7 @@
 ﻿using System.Text.RegularExpressions;
 using DfE.CleanArchitecture.Common.Domain;
 
-namespace DfE.GetInformationAboutSchools.Prototyping.Core.Organisations.Application.Model;
+namespace DfE.GetInformationAboutSchools.Prototyping.Core.Establishments.Application.Model;
 
 /// <summary>
 /// Represents a strongly‑typed URN identifier for an establishment.

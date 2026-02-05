@@ -1,6 +1,6 @@
 ﻿using DfE.CleanArchitecture.Common.Domain;
 
-namespace DfE.GetInformationAboutSchools.Prototyping.Core.Organisations.Application.Model;
+namespace DfE.GetInformationAboutSchools.Prototyping.Core.Establishments.Application.Model;
 
 /// <summary>
 /// Represents an Establishment as a domain aggregate root.

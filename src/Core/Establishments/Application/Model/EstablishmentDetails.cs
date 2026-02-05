@@ -1,7 +1,7 @@
 ﻿using DfE.CleanArchitecture.Common.Domain;
 using System.Text.RegularExpressions;
 
-namespace DfE.GetInformationAboutSchools.Prototyping.Core.Organisations.Application.Model;
+namespace DfE.GetInformationAboutSchools.Prototyping.Core.Establishments.Application.Model;
 
 /// <summary>
 /// Represents the immutable details of an establishment.
