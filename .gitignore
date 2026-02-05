@@ -188,6 +188,8 @@ PublishScripts/
 !**/[Pp]ackages/build/
 *.nuget.props
 *.nuget.targets
+# Ignore NuGet configuration
+NuGet.config
 
 # Microsoft Azure Build Output
 csx/

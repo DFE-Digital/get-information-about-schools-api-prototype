@@ -6,4 +6,8 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+	<PackageReference Include="Dfe.Data.Common.Infrastructure.Persistence.Sql.Dapper" Version="0.0.1-5" />
+  </ItemGroup>
+
 </Project>
