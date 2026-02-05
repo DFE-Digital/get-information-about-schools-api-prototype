@@ -1,0 +1,30 @@
+﻿namespace DfE.GetInformationAboutSchools.Prototyping.Core.Organisations.Application.Model;
+
+/// <summary>
+/// Represents an exception that occurs when retrieving information
+/// about a school in the "About the School" use case.
+/// </summary>
+/// <remarks>
+/// This exception is thrown when the system cannot obtain or process
+/// school details due to invalid input, missing data, or other errors.
+/// </remarks>
+internal sealed class EstablishmentException : ApplicationException
+{
+    /// <summary>
+    /// Initializes a new instance of the <see cref="EstablishmentException"/> class
+    /// with a specified error message.
+    /// </summary>
+    /// <param name="message">The message that describes the error.</param>
+    public EstablishmentException(string message) : base(message){
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="AboutSchoolException"/> class
+    /// with a specified error message and a reference to the inner exception that caused this exception.
+    /// </summary>
+    /// <param name="message">The message that describes the error.</param>
+    /// <param name="innerException">The exception that is the cause of this exception.</param>
+    public EstablishmentException(string message, Exception innerException)
+        : base(message, innerException){
+    }
+}

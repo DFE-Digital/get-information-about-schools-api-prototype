@@ -15,4 +15,8 @@
 	<PackageReference Include="Microsoft.Extensions.Options" Version="2.1.1" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Organisations\Infrastructure\" />
+  </ItemGroup>
+
 </Project>
