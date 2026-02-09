@@ -1,29 +1,23 @@
 ﻿namespace DfE.GetInformationAboutSchools.Prototyping.Core.Establishments.Application.Model;
 
 /// <summary>
-/// Represents an exception that occurs when retrieving information
-/// about a school in the "About the School" use case.
+/// Exception type used for establishment‑related validation or domain errors.
 /// </summary>
-/// <remarks>
-/// This exception is thrown when the system cannot obtain or process
-/// school details due to invalid input, missing data, or other errors.
-/// </remarks>
 internal sealed class EstablishmentException : ApplicationException
 {
     /// <summary>
-    /// Initializes a new instance of the <see cref="EstablishmentException"/> class
-    /// with a specified error message.
+    /// Creates a new <see cref="EstablishmentException"/> with a message describing the error.
     /// </summary>
-    /// <param name="message">The message that describes the error.</param>
-    public EstablishmentException(string message) : base(message){
+    /// <param name="message">A description of the validation or domain failure.</param>
+    public EstablishmentException(string message)
+        : base(message){
     }
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="AboutSchoolException"/> class
-    /// with a specified error message and a reference to the inner exception that caused this exception.
+    /// Creates a new <see cref="EstablishmentException"/> with a message and an inner exception.
     /// </summary>
-    /// <param name="message">The message that describes the error.</param>
-    /// <param name="innerException">The exception that is the cause of this exception.</param>
+    /// <param name="message">A description of the validation or domain failure.</param>
+    /// <param name="innerException">The underlying exception that caused this error.</param>
     public EstablishmentException(string message, Exception innerException)
         : base(message, innerException){
     }

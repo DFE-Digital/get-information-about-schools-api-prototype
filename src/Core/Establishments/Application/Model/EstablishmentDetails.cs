@@ -4,52 +4,31 @@ using System.Text.RegularExpressions;
 namespace DfE.GetInformationAboutSchools.Prototyping.Core.Establishments.Application.Model;
 
 /// <summary>
-/// Represents the immutable details of an establishment.
-/// <para>
-/// This value object validates all invariants at creation time. If an instance
-/// exists, it is guaranteed to be valid. This ensures:
-/// </para>
-/// <list type="bullet">
-///   <item>
-///     <description>
-///     <b>No invalid state can be represented</b> — construction fails fast
-///     when required fields are missing or malformed.
-///     </description>
-///   </item>
-///   <item>
-///     <description>
-///     <b>Immutability</b> — all properties are set once and never changed,
-///     providing a consistent snapshot of establishment details.
-///     </description>
-///   </item>
-///   <item>
-///     <description>
-///     <b>Simplicity for aggregate roots</b> — aggregates can assume this
-///     object is valid and only enforce composition rules.
-///     </description>
-///   </item>
-/// </list>
+/// Immutable value object containing the core details of an establishment.
 /// </summary>
+/// <remarks>
+/// All invariants are validated at creation time, ensuring no invalid instance can exist.
+/// </remarks>
 public sealed partial class EstablishmentDetails : ValueObject<EstablishmentDetails>
 {
     /// <summary>
-    /// The establishment's name. Guaranteed to be non‑empty.
+    /// Gets the establishment's name. Guaranteed to be non‑empty.
     /// </summary>
     public string Name { get; }
 
     /// <summary>
-    /// The establishment's website URL. Guaranteed to be non‑empty.
+    /// Gets the establishment's website URL. Guaranteed to be a valid URL.
     /// </summary>
     public string WebsiteUrl { get; }
 
     /// <summary>
-    /// The establishment's telephone number. Guaranteed to be a valid UK number.
+    /// Gets the establishment's telephone number. Guaranteed to be a valid UK number.
     /// </summary>
     public string TelephoneNumber { get; }
 
     /// <summary>
-    /// Private constructor used only after successful validation.
-    /// Ensures immutability by preventing property mutation after creation.
+    /// Initializes a new instance of the <see cref="EstablishmentDetails"/> class.
+    /// Assumes all parameters have already been validated.
     /// </summary>
     private EstablishmentDetails(
         string name,
@@ -62,10 +41,15 @@ public sealed partial class EstablishmentDetails : ValueObject<EstablishmentDeta
     }
 
     /// <summary>
-    /// Factory method for creating a new <see cref="EstablishmentDetails"/> instance.
-    /// All invariants are validated before construction, ensuring the resulting
-    /// value object is always valid.
+    /// Creates a validated <see cref="EstablishmentDetails"/> instance.
     /// </summary>
+    /// <param name="name">The establishment's name.</param>
+    /// <param name="websiteUrl">The establishment's website URL.</param>
+    /// <param name="telephoneNumber">A valid UK telephone number.</param>
+    /// <returns>A fully validated <see cref="EstablishmentDetails"/> value object.</returns>
+    /// <exception cref="EstablishmentException">
+    /// Thrown when any parameter is missing or fails validation.
+    /// </exception>
     public static EstablishmentDetails Create(
         string name,
         string websiteUrl,
@@ -76,9 +60,7 @@ public sealed partial class EstablishmentDetails : ValueObject<EstablishmentDeta
     }
 
     /// <summary>
-    /// Validates all invariants for this value object.
-    /// Throws an <see cref="EstablishmentException"/> if any rule is violated.
-    /// This ensures no invalid instance can ever be created.
+    /// Validates all supplied values and throws if any invariant is violated.
     /// </summary>
     private static void Validate(
         string name,
@@ -90,6 +72,9 @@ public sealed partial class EstablishmentDetails : ValueObject<EstablishmentDeta
 
         if (string.IsNullOrWhiteSpace(websiteUrl))
             throw new EstablishmentException("Website URL is required.");
+
+        if (!IsValidWebsiteUrl(websiteUrl))
+            throw new EstablishmentException("Website URL must be a valid URL.");
 
         if (string.IsNullOrWhiteSpace(telephoneNumber))
             throw new EstablishmentException("Telephone number is required.");
@@ -104,8 +89,7 @@ public sealed partial class EstablishmentDetails : ValueObject<EstablishmentDeta
     public override string ToString() => TelephoneNumber;
 
     /// <summary>
-    /// Defines equality based on the value object's components.
-    /// Value objects are equal when all their defining fields match.
+    /// Defines equality based on all component values.
     /// </summary>
     protected override IEnumerable<object> GetEqualityComponents()
     {
@@ -115,8 +99,7 @@ public sealed partial class EstablishmentDetails : ValueObject<EstablishmentDeta
     }
 
     /// <summary>
-    /// Determines whether the supplied telephone number matches the UK number pattern.
-    /// Encapsulated as a helper to keep validation logic intention‑revealing.
+    /// Checks whether the supplied telephone number matches the UK format.
     /// </summary>
     private static bool IsValidTelephoneNumber(string telephoneNumber) =>
         TelephoneNumberValidation().IsMatch(telephoneNumber);
@@ -128,8 +111,26 @@ public sealed partial class EstablishmentDetails : ValueObject<EstablishmentDeta
 
     /// <summary>
     /// Compiled regular expression for telephone number validation.
-    /// Generated at compile time for performance and correctness.
     /// </summary>
     [GeneratedRegex(TelephoneNumberPattern)]
     private static partial Regex TelephoneNumberValidation();
+
+    /// <summary>
+    /// Checks whether the supplied website URL matches a valid URL pattern.
+    /// </summary>
+    private static bool IsValidWebsiteUrl(string websiteUrl) =>
+        WebsiteUrlValidation().IsMatch(websiteUrl);
+
+    /// <summary>
+    /// Regular expression pattern for validating website URLs.
+    /// Allows optional http/https, domain names, and optional paths.
+    /// </summary>
+    private const string WebsiteUrlPattern =
+        @"^(https?:\/\/)?([a-zA-Z0-9\-]+\.)+[a-zA-Z]{2,}(\/.*)?$";
+
+    /// <summary>
+    /// Compiled regular expression for website URL validation.
+    /// </summary>
+    [GeneratedRegex(WebsiteUrlPattern, RegexOptions.IgnoreCase)]
+    private static partial Regex WebsiteUrlValidation();
 }

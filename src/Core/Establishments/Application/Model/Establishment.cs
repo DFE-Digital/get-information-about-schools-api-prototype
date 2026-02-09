@@ -3,51 +3,30 @@
 namespace DfE.GetInformationAboutSchools.Prototyping.Core.Establishments.Application.Model;
 
 /// <summary>
-/// Represents an Establishment as a domain aggregate root.
-/// <para>
-/// This aggregate follows a read‑only domain model where:
-/// </para>
-/// <list type="bullet">
-///   <item>
-///     <description>
-///     <b>Value objects enforce their own invariants</b> — 
-///     <see cref="EstablishmentDetails"/> cannot be created in an invalid state.
-///     </description>
-///   </item>
-///   <item>
-///     <description>
-///     <b>The aggregate root enforces only composition</b> — 
-///     it ensures required components are present, but does not re‑validate them.
-///     </description>
-///   </item>
-///   <item>
-///     <description>
-///     <b>Immutability is guaranteed</b> — 
-///     once constructed, the aggregate represents a complete and consistent snapshot.
-///     </description>
-///   </item>
-/// </list>
-/// <para>
-/// This keeps the aggregate small, intention‑revealing, and aligned with DDD:
-/// value objects guarantee correctness; the aggregate guarantees structure.
-/// </para>
+/// Aggregate root representing an establishment within the domain.
 /// </summary>
+/// <remarks>
+/// The aggregate is immutable and only enforces structural completeness.
+/// All supplied value objects are assumed to be pre‑validated.
+/// </remarks>
 public sealed class Establishment : AggregateRoot<EstablishmentIdentifier>
 {
     /// <summary>
-    /// The basic details of the establishment.
-    /// Guaranteed to be valid because the value object enforces its own invariants.
+    /// Gets the core details of the establishment.
     /// </summary>
     public EstablishmentDetails BasicDetails { get; }
 
     /// <summary>
-    /// Creates a new read‑only Establishment aggregate.
-    /// Only structural invariants are enforced here; value objects are assumed valid.
+    /// Initializes a new instance of the <see cref="Establishment"/> class.
     /// </summary>
-    /// <param name="identifier">The unique identifier for the establishment.</param>
-    /// <param name="basicDetails">A fully constructed, valid details object.</param>
+    /// <param name="identifier">
+    /// The unique identifier assigned to this establishment.
+    /// </param>
+    /// <param name="basicDetails">
+    /// A valid <see cref="EstablishmentDetails"/> instance describing the establishment.
+    /// </param>
     /// <exception cref="EstablishmentException">
-    /// Thrown when <paramref name="basicDetails"/> is null.
+    /// Thrown when <paramref name="basicDetails"/> is <c>null</c>.
     /// </exception>
     public Establishment(
         EstablishmentIdentifier identifier,
@@ -60,8 +39,11 @@ public sealed class Establishment : AggregateRoot<EstablishmentIdentifier>
     }
 
     /// <summary>
-    /// Factory method for creating an Establishment aggregate.
+    /// Creates a new establishment aggregate.
     /// </summary>
+    /// <param name="identifier">The establishment's unique identifier.</param>
+    /// <param name="basicDetails">Validated establishment details.</param>
+    /// <returns>A new <see cref="Establishment"/> instance.</returns>
     public static Establishment Create(
         EstablishmentIdentifier identifier,
         EstablishmentDetails basicDetails) =>

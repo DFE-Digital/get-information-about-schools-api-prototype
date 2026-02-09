@@ -4,50 +4,24 @@ using DfE.CleanArchitecture.Common.Domain;
 namespace DfE.GetInformationAboutSchools.Prototyping.Core.Establishments.Application.Model;
 
 /// <summary>
-/// Represents a strongly‑typed URN identifier for an establishment.
-/// <para>
-/// As a value object, this type guarantees that any instance is valid at the
-/// moment of creation. This ensures:
-/// </para>
-/// <list type="bullet">
-///   <item>
-///     <description>
-///     <b>No invalid identifiers can exist</b> — construction fails fast if the
-///     URN does not meet the required format.
-///     </description>
-///   </item>
-///   <item>
-///     <description>
-///     <b>Immutability</b> — once created, the URN cannot change, ensuring
-///     consistent identity throughout the domain.
-///     </description>
-///   </item>
-///   <item>
-///     <description>
-///     <b>Type‑safety</b> — prevents accidental misuse of raw integers where a
-///     URN is required.
-///     </description>
-///   </item>
-/// </list>
-/// <para>
-/// This aligns with DDD principles: value objects enforce their own invariants,
-/// allowing aggregate roots to assume correctness and focus solely on composition.
-/// </para>
+/// Strongly‑typed URN identifier for an establishment.
 /// </summary>
+/// <remarks>
+/// Validates the URN on construction to ensure only well‑formed identifiers exist.
+/// </remarks>
 public sealed partial class EstablishmentIdentifier : ValueObject<EstablishmentIdentifier>
 {
     /// <summary>
-    /// The establishment's URN. Guaranteed to be a valid 6‑digit number.
+    /// Gets the establishment's URN. Always a valid 6‑digit number.
     /// </summary>
     public int Urn { get; }
 
     /// <summary>
-    /// Creates a new <see cref="EstablishmentIdentifier"/> instance.
-    /// Validation is performed immediately to ensure the identifier is always valid.
+    /// Creates a new <see cref="EstablishmentIdentifier"/> with a validated URN.
     /// </summary>
     /// <param name="urn">A 6‑digit numeric URN.</param>
     /// <exception cref="ArgumentException">
-    /// Thrown when the URN does not match the required format.
+    /// Thrown when <paramref name="urn"/> does not match the required format.
     /// </exception>
     public EstablishmentIdentifier(int urn)
     {
@@ -59,13 +33,12 @@ public sealed partial class EstablishmentIdentifier : ValueObject<EstablishmentI
     }
 
     /// <summary>
-    /// Returns the URN as a string representation of this value object.
+    /// Returns the URN as a string.
     /// </summary>
     public override string ToString() => Urn.ToString();
 
     /// <summary>
-    /// Defines equality based on the URN value.
-    /// Value objects are equal when all their defining fields match.
+    /// Defines equality based solely on the URN value.
     /// </summary>
     protected override IEnumerable<object> GetEqualityComponents()
     {
@@ -73,9 +46,10 @@ public sealed partial class EstablishmentIdentifier : ValueObject<EstablishmentI
     }
 
     /// <summary>
-    /// Determines whether the supplied URN matches the required 6‑digit pattern.
-    /// Encapsulated as a helper to keep validation logic intention‑revealing.
+    /// Checks whether the supplied URN matches the required 6‑digit pattern.
     /// </summary>
+    /// <param name="urn">The URN to validate.</param>
+    /// <returns><c>true</c> if the URN is valid; otherwise, <c>false</c>.</returns>
     private static bool IsValidUrn(int urn) =>
         UrnValidation().IsMatch(urn.ToString());
 
@@ -86,7 +60,6 @@ public sealed partial class EstablishmentIdentifier : ValueObject<EstablishmentI
 
     /// <summary>
     /// Compiled regular expression for URN validation.
-    /// Generated at compile time for performance and correctness.
     /// </summary>
     [GeneratedRegex(UrnPattern)]
     private static partial Regex UrnValidation();

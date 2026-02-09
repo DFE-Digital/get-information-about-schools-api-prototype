@@ -13,4 +13,13 @@
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\Core\DfE.GetInformationAboutSchools.Prototyping.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Establishments\Mappers\" />
+    <Folder Include="Establishments\ViewModels\" />
+  </ItemGroup>
+
 </Project>
