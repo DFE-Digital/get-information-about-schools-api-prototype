@@ -74,7 +74,8 @@ public sealed class EstablishmentsRepository : IEstablishmentsRepository
                     dbTransaction,
                     new SqlRequestOptions
                     {
-                        Type = CommandType.Text
+                        Type = CommandType.Text,
+                        Parameters = new { URN = "" } // bug here... we need to make the Parameters option non-compulsory.
                     },
                     cancellationToken
                 );

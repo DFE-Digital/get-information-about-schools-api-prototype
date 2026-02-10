@@ -45,8 +45,8 @@ public static class CompositionRoot
         ArgumentNullException.ThrowIfNull(services);
 
         return services
-            .AddSingleton<IEstablishmentsRepository, EstablishmentsRepository>()
-            .AddSingleton<IMapper<
+            .AddScoped<IEstablishmentsRepository, EstablishmentsRepository>()
+            .AddScoped<IMapper<
                 IEnumerable<EstablishmentDataTransferObject>,
                 IReadOnlyCollection<Establishment>>, EstablishmentsDtoToModelMapper>();
     }
