@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using System.Text;
 
-namespace DfE.GetInformationAboutSchools.Prototyping.API.Establishments.Controllers.Response;
+namespace DfE.GetInformationAboutSchools.Prototyping.API.Establishments.GetEstablishments.Controllers.Response;
 
 /// <summary>
 /// Provides functionality for writing CSV responses directly to an HTTP response stream.

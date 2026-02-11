@@ -16,6 +16,10 @@ public sealed class Establishment : AggregateRoot<EstablishmentIdentifier>
     /// </summary>
     public EstablishmentDetails BasicDetails { get; }
 
+    public EstablishmentContactDetails ContactDetails { get; }
+
+    public EstablishmentAddress Address { get; }
+
     /// <summary>
     /// Initializes a new instance of the <see cref="Establishment"/> class.
     /// </summary>
@@ -30,12 +34,22 @@ public sealed class Establishment : AggregateRoot<EstablishmentIdentifier>
     /// </exception>
     public Establishment(
         EstablishmentIdentifier identifier,
-        EstablishmentDetails basicDetails)
+        EstablishmentDetails basicDetails,
+        EstablishmentContactDetails contactDetails,
+        EstablishmentAddress address)
         : base(identifier)
     {
         BasicDetails = basicDetails
             ?? throw new EstablishmentException(
                 "An initialised 'EstablishmentDetails' object must be provided.");
+        
+        ContactDetails = contactDetails ??
+            throw new EstablishmentException(
+                "An initialised 'EstablishmentContactDetails' object must be provided.");
+
+        Address = address
+            ?? throw new EstablishmentException(
+                "An initialised 'EstablishmentAddress' object must be provided.");
     }
 
     /// <summary>
@@ -46,6 +60,8 @@ public sealed class Establishment : AggregateRoot<EstablishmentIdentifier>
     /// <returns>A new <see cref="Establishment"/> instance.</returns>
     public static Establishment Create(
         EstablishmentIdentifier identifier,
-        EstablishmentDetails basicDetails) =>
-        new(identifier, basicDetails);
+        EstablishmentDetails basicDetails,
+        EstablishmentContactDetails contactDetails,
+        EstablishmentAddress address) =>
+        new(identifier, basicDetails, contactDetails, address);
 }

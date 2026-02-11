@@ -1,5 +1,4 @@
 ﻿using DfE.CleanArchitecture.Common.Domain;
-using System.Text.RegularExpressions;
 
 namespace DfE.GetInformationAboutSchools.Prototyping.Core.Establishments.Application.Model;
 
@@ -11,14 +10,14 @@ namespace DfE.GetInformationAboutSchools.Prototyping.Core.Establishments.Applica
 /// <para>
 /// This value object enforces all domain invariants at creation time. Optional
 /// fields may be omitted, but when supplied must conform to the rules of the
-/// domain (e.g., valid URL format, valid UK telephone number).
+/// domain.
 /// </para>
 /// <para>
 /// Because this is a value object, equality is determined by the values of its
 /// components rather than by identity.
 /// </para>
 /// </remarks>
-public sealed partial class EstablishmentDetails : ValueObject<EstablishmentDetails>
+public sealed class EstablishmentDetails : ValueObject<EstablishmentDetails>
 {
     /// <summary>
     /// Gets the establishment's official name. This value is always required.
@@ -26,32 +25,32 @@ public sealed partial class EstablishmentDetails : ValueObject<EstablishmentDeta
     public string Name { get; }
 
     /// <summary>
-    /// Gets the establishment's website URL, if known. When supplied, it must
-    /// conform to a valid URL format.
+    /// Gets the establishment's type (e.g., Academy, Community School).
+    /// This value is required.
     /// </summary>
-    public string? WebsiteUrl { get; }
+    public string EstablishmentType { get; }
 
     /// <summary>
-    /// Gets the establishment's telephone number, if known. When supplied, it
-    /// must conform to a valid UK telephone number format.
+    /// Gets the establishment's phase of education (e.g., Primary, Secondary).
+    /// This value is required.
     /// </summary>
-    public string? TelephoneNumber { get; }
+    public string PhaseOfEducation { get; }
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="EstablishmentDetails"/> class.
-    /// Assumes all parameters have already been validated.
+    /// Gets the establishment's operational status (e.g., Open, Closed).
     /// </summary>
-    /// <param name="name">The establishment's official name.</param>
-    /// <param name="websiteUrl">The establishment's website URL, if known.</param>
-    /// <param name="telephoneNumber">The establishment's telephone number, if known.</param>
+    public EstablishmentStatus Status { get; }
+
     private EstablishmentDetails(
         string name,
-        string? websiteUrl,
-        string? telephoneNumber)
+        string establishmentType,
+        string phaseOfEducation,
+        EstablishmentStatus status)
     {
         Name = name;
-        WebsiteUrl = websiteUrl;
-        TelephoneNumber = telephoneNumber;
+        EstablishmentType = establishmentType;
+        PhaseOfEducation = phaseOfEducation;
+        Status = status;
     }
 
     /// <summary>
@@ -59,19 +58,23 @@ public sealed partial class EstablishmentDetails : ValueObject<EstablishmentDeta
     /// all supplied values against domain rules.
     /// </summary>
     /// <param name="name">The establishment's official name.</param>
-    /// <param name="websiteUrl">The establishment's website URL (optional).</param>
-    /// <param name="telephoneNumber">The establishment's telephone number (optional).</param>
-    /// <returns>A fully validated <see cref="EstablishmentDetails"/> value object.</returns>
+    /// <param name="establishmentType">The establishment's type.</param>
+    /// <param name="phaseOfEducation">The establishment's phase of education.</param>
+    /// <param name="status">The establishment's operational status.</param>
+    /// <returns>
+    /// A fully validated <see cref="EstablishmentDetails"/> value object.
+    /// </returns>
     /// <exception cref="EstablishmentException">
     /// Thrown when any supplied value violates a domain invariant.
     /// </exception>
     public static EstablishmentDetails Create(
         string? name,
-        string? websiteUrl,
-        string? telephoneNumber)
+        string? establishmentType,
+        string? phaseOfEducation,
+        EstablishmentStatus status)
     {
-        Validate(name, websiteUrl, telephoneNumber);
-        return new EstablishmentDetails(name!, websiteUrl, telephoneNumber);
+        Validate(name, establishmentType, phaseOfEducation);
+        return new EstablishmentDetails(name!, establishmentType!, phaseOfEducation!, status);
     }
 
     /// <summary>
@@ -79,19 +82,16 @@ public sealed partial class EstablishmentDetails : ValueObject<EstablishmentDeta
     /// is violated.
     /// </summary>
     /// <param name="name">The establishment's name.</param>
-    /// <param name="websiteUrl">The establishment's website URL.</param>
-    /// <param name="telephoneNumber">The establishment's telephone number.</param>
+    /// <param name="establishmentType">The establishment's type.</param>
+    /// <param name="phaseOfEducation">The establishment's phase of education.</param>
     /// <exception cref="EstablishmentException">
     /// Thrown when validation fails.
     /// </exception>
-    private static void Validate(
-        string? name,
-        string? websiteUrl,
-        string? telephoneNumber)
+    private static void Validate(string? name, string? establishmentType, string? phaseOfEducation)
     {
         EnsureNameIsProvided(name);
-        EnsureWebsiteUrlIsValidIfProvided(websiteUrl);
-        EnsureTelephoneNumberIsValidIfProvided(telephoneNumber);
+        EnsureEstablishmentTypeIsProvided(establishmentType);
+        EnsurePhaseOfEducationIsProvided(phaseOfEducation);
     }
 
     /// <summary>
@@ -104,116 +104,49 @@ public sealed partial class EstablishmentDetails : ValueObject<EstablishmentDeta
     private static void EnsureNameIsProvided(string? name)
     {
         if (string.IsNullOrWhiteSpace(name))
-            throw new EstablishmentException("School name is required.");
-    }
-
-    /// <summary>
-    /// Ensures that the website URL is valid when supplied.
-    /// </summary>
-    /// <param name="websiteUrl">The website URL to validate.</param>
-    /// <exception cref="EstablishmentException">
-    /// Thrown when the URL is supplied but does not match the expected format.
-    /// </exception>
-    private static void EnsureWebsiteUrlIsValidIfProvided(string? websiteUrl)
-    {
-        if (!IsProvided(websiteUrl))
-            return;
-
-        if (!IsValidWebsiteUrl(websiteUrl!))
             throw new EstablishmentException(
-                $"Website URL must be a valid URL when provided: {websiteUrl!}.");
+                "Establishment name is required.");
     }
 
     /// <summary>
-    /// Ensures that the telephone number is valid when supplied.
+    /// Ensures that the establishment type is present and non‑empty.
     /// </summary>
-    /// <param name="telephoneNumber">The telephone number to validate.</param>
+    /// <param name="establishmentType">The type to validate.</param>
     /// <exception cref="EstablishmentException">
-    /// Thrown when the number is supplied but does not match the expected UK format.
+    /// Thrown when the type is null, empty, or whitespace.
     /// </exception>
-    private static void EnsureTelephoneNumberIsValidIfProvided(string? telephoneNumber)
+    private static void EnsureEstablishmentTypeIsProvided(string? establishmentType)
     {
-        if (!IsProvided(telephoneNumber))
-            return;
-
-        if (!IsValidTelephoneNumber(telephoneNumber!))
+        if (string.IsNullOrWhiteSpace(establishmentType))
             throw new EstablishmentException(
-                $"Telephone number must be a valid UK number when provided: {telephoneNumber!}.");
+                "Establishment type is required.");
     }
 
     /// <summary>
-    /// Determines whether a value has been supplied (non‑null and non‑whitespace).
+    /// Ensures that the phase of education is present and non‑empty.
     /// </summary>
-    /// <param name="value">The value to check.</param>
-    /// <returns><c>true</c> if the value is supplied; otherwise <c>false</c>.</returns>
-    private static bool IsProvided(string? value) =>
-        !string.IsNullOrWhiteSpace(value);
-
-    /// <summary>
-    /// Returns the telephone number as the string representation of this value object.
-    /// </summary>
-    /// <returns>The telephone number, or an empty string if none is supplied.</returns>
-    public override string ToString() =>
-        TelephoneNumber ?? string.Empty;
+    /// <param name="phaseOfEducation">The phase to validate.</param>
+    /// <exception cref="EstablishmentException">
+    /// Thrown when the phase is null, empty, or whitespace.
+    /// </exception>
+    private static void EnsurePhaseOfEducationIsProvided(string? phaseOfEducation)
+    {
+        if (string.IsNullOrWhiteSpace(phaseOfEducation))
+            throw new EstablishmentException(
+                "Establishment phase of education is required.");
+    }
 
     /// <summary>
     /// Defines equality based on all component values.
     /// </summary>
-    /// <returns>An enumeration of the components that define equality.</returns>
-    protected override IEnumerable<object?> GetEqualityComponents()
+    /// <returns>
+    /// An enumeration of the components that define equality.
+    /// </returns>
+    protected override IEnumerable<object> GetEqualityComponents()
     {
         yield return Name;
-        yield return WebsiteUrl;
-        yield return TelephoneNumber;
+        yield return EstablishmentType;
+        yield return PhaseOfEducation;
+        yield return Status;
     }
-
-    /// <summary>
-    /// Determines whether the supplied telephone number matches the UK format.
-    /// </summary>
-    /// <param name="telephoneNumber">The telephone number to validate.</param>
-    /// <returns><c>true</c> if the number is valid; otherwise <c>false</c>.</returns>
-    private static bool IsValidTelephoneNumber(string telephoneNumber) =>
-        TelephoneNumberValidation().IsMatch(telephoneNumber);
-
-    /// <summary>
-    /// Regular expression pattern for validating UK telephone numbers.
-    /// Supports:
-    /// - National format starting with 0 (11 digits)
-    /// - International format starting with 44 or +44
-    /// - Raw 10–11 digit numbers with no prefix
-    /// </summary>
-    private const string TelephoneNumberPattern = @"^(?:\d{7,14}|0\d{6,13}|44\d{5,12})$";
-
-    /// <summary>
-    /// Compiled regular expression for telephone number validation.
-    /// </summary>
-    [GeneratedRegex(TelephoneNumberPattern)]
-    private static partial Regex TelephoneNumberValidation();
-
-    /// <summary>
-    /// Determines whether the supplied website URL matches a valid URL pattern.
-    /// </summary>
-    /// <param name="websiteUrl">The URL to validate.</param>
-    /// <returns><c>true</c> if the URL is valid; otherwise <c>false</c>.</returns>
-    private static bool IsValidWebsiteUrl(string websiteUrl) =>
-        WebsiteUrlValidation().IsMatch(websiteUrl);
-
-    /// <summary>
-    /// Regular expression pattern for validating website URLs.
-    /// This pattern is intentionally forgiving to accommodate the wide variety of
-    /// real‑world historical URL formats, including partially formed or
-    /// inconsistent entries. It accepts optional http/https schemes, optional "www."
-    /// prefixes, multi‑part domain names, optional paths, and even common malformed
-    /// variants such as missing slashes after "http:" or trailing dots at the end
-    /// of the URL. The goal is to recognise plausible website URLs without enforcing
-    /// strict RFC compliance.
-    /// </summary>
-    private const string WebsiteUrlPattern =
-        @"^(?:https?:\/\/|https?:|http:|www\.)?[A-Za-z0-9.-]+\.[A-Za-z]{2,}(?:\/\S*)?\.{0,2}$";
-
-    /// <summary>
-    /// Compiled regular expression for website URL validation.
-    /// </summary>
-    [GeneratedRegex(WebsiteUrlPattern, RegexOptions.IgnoreCase)]
-    private static partial Regex WebsiteUrlValidation();
 }

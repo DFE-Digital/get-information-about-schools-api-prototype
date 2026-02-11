@@ -1,6 +1,15 @@
 using Dfe.Data.Common.Infrastructure.Persistence.Sql.Dapper;
-using DfE.GetInformationAboutSchools.Prototyping.API.Establishments.Controllers.Response;
+using DfE.CleanArchitecture.Common.CrossCutting.Mapper;
+using DfE.GetInformationAboutSchools.Prototyping.API.Establishments.GetEstablishments.Controllers.Response;
+using DfE.GetInformationAboutSchools.Prototyping.API.Establishments.Mappers;
+using DfE.GetInformationAboutSchools.Prototyping.API.Establishments.ViewModels;
 using DfE.GetInformationAboutSchools.Prototyping.Core.Establishments;
+using DfE.GetInformationAboutSchools.Prototyping.Core.Establishments.Application.Model;
+using DfE.GetInformationAboutSchools.Prototyping.Core.Establishments.Application.Model.ValidationServices.Address;
+using DfE.GetInformationAboutSchools.Prototyping.Core.Establishments.Application.Model.ValidationServices.ContactDetails;
+using DfE.GetInformationAboutSchools.Prototyping.Core.Establishments.ValidationServices;
+using DfE.GetInformationAboutSchools.Prototyping.Core.Establishments.ValidationServices.EstablishmentAddress;
+using DfE.GetInformationAboutSchools.Prototyping.Core.Establishments.ValidationServices.EstablishmentContactDetails;
 using DfE.GetInformationAboutSchools.Prototyping.Infrastructure.Establishments;
 using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.Data.SqlClient;
@@ -19,6 +28,16 @@ builder.Services.AddLogging();
 builder.Services.AddEstablishmentUseCaseDependencies();
 builder.Services.AddEstablishmentInfrastructureDependencies();
 builder.Services.AddSingleton<ICsvResponseBuilder, CsvResponseBuilder>();
+builder.Services.AddSingleton<IMapper<
+    Establishment, EstablishmentViewModel>, EstablishmentModelToViewModelMapper>();
+builder.Services
+    .Configure<ValidationPatterns>(
+        builder.Configuration.GetSection("ValidationPatterns"));
+builder.Services.AddSingleton<IRegexValidationService, RegexValidationService>();
+builder.Services.AddSingleton<
+    IEstablishmentAddressValidator, EstablishmentAddressValidator>();
+builder.Services.AddSingleton<
+    IEstablishmentContactDetailsValidator, EstablishmentContactDetailsValidator>();
 
 // SQL Server connection string
 const string sqlServerConnectionString =

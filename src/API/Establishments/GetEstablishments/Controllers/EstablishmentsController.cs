@@ -1,11 +1,12 @@
-using DfE.GetInformationAboutSchools.Prototyping.API.Establishments.Controllers.Response;
+using DfE.CleanArchitecture.Common.CrossCutting.Mapper;
+using DfE.GetInformationAboutSchools.Prototyping.API.Establishments.GetEstablishments.Controllers.Response;
 using DfE.GetInformationAboutSchools.Prototyping.API.Establishments.ViewModels;
 using DfE.GetInformationAboutSchools.Prototyping.Core.Establishments.Application.Model;
 using DfE.GetInformationAboutSchools.Prototyping.Core.Shared;
 using Microsoft.AspNetCore.Mvc;
 using System.Runtime.CompilerServices;
 
-namespace DfE.GetInformationAboutSchools.Prototyping.API.Establishments.Controllers;
+namespace DfE.GetInformationAboutSchools.Prototyping.API.Establishments.GetEstablishments.Controllers;
 
 [ApiController]
 [Route("[controller]")]
@@ -15,16 +16,19 @@ public class EstablishmentsController : ControllerBase
     private readonly IUseCaseResponseOnly<
         UseCaseResponse<IReadOnlyCollection<Establishment>>> _useCase;
     private readonly ICsvResponseBuilder _csvResponseBuilder;
+    private readonly IMapper<Establishment, EstablishmentViewModel> _modelToViewModelMapper;
 
     public EstablishmentsController(
         ILogger<EstablishmentsController> logger,
         IUseCaseResponseOnly<
             UseCaseResponse<IReadOnlyCollection<Establishment>>> useCase,
-        ICsvResponseBuilder csvResponseBuilder)
+        ICsvResponseBuilder csvResponseBuilder,
+        IMapper<Establishment, EstablishmentViewModel> modelToViewModelMapper)
     {
         _logger = logger;
         _useCase = useCase;
         _csvResponseBuilder = csvResponseBuilder;
+        _modelToViewModelMapper = modelToViewModelMapper;
     }
 
     [HttpGet(Name = "GetEstablishments")]
@@ -44,7 +48,7 @@ public class EstablishmentsController : ControllerBase
         {
             return Problem(
                 detail: "Use case returned no data.",
-                statusCode: StatusCodes.Status500InternalServerError);
+                statusCode: StatusCodes.Status404NotFound);
         }
 
         #pragma warning disable CS1998
@@ -55,11 +59,7 @@ public class EstablishmentsController : ControllerBase
             {
                 ct.ThrowIfCancellationRequested();
 
-                yield return new EstablishmentViewModel
-                {
-                    URN = establishment.Identifier.Urn,
-                    Name = establishment.BasicDetails.Name
-                };
+                yield return _modelToViewModelMapper.Map(establishment);
             }
         }
         #pragma warning restore CS1998
@@ -91,11 +91,26 @@ public class EstablishmentsController : ControllerBase
         return await _csvResponseBuilder.WriteCsvAsync(
             Response,
             result.Model!,
-            ["URN", "EstablishmentName"],
+            [
+                "URN",
+                "EstablishmentName",
+                "EstablishmentType",
+                "PhaseOfEducation",
+                "StatusCode",
+                "Address_Street",
+                "Address_Town",
+                "Address_Postcode"
+            ],
             row =>
             [
                 row.Identifier!.Urn.ToString(),
-                row.BasicDetails?.Name!
+                row.BasicDetails?.Name!,
+                row.BasicDetails?.EstablishmentType!,
+                row.BasicDetails?.PhaseOfEducation!,
+                row.BasicDetails?.Status.Name!,
+                row.Address.Street!,
+                row.Address.Town!,
+                row.Address.Postcode!
             ],
             "establishments.csv",
             cancellationToken);

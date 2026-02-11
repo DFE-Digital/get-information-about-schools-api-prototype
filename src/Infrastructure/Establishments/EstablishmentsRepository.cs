@@ -65,7 +65,20 @@ public sealed class EstablishmentsRepository : IEstablishmentsRepository
             await _dbContextProvider.BeginTransactionAsync(isolationLevel, cancellationToken);
 
         const string SelectEstablishmentsSql =
-            "SELECT URN, EstablishmentName, SchoolWebsite, TelephoneNum FROM Establishments;";
+            """
+            SELECT
+                URN,
+                EstablishmentName,
+                TypeOfEstablishment_name,
+                PhaseOfEducation_name,
+                SchoolWebsite,
+                TelephoneNum,
+                Street,
+                Town,
+                Postcode,
+                EstablishmentStatus_code
+            FROM Establishments;
+            """;
 
         IEnumerable<EstablishmentDataTransferObject> result =
             await _dbContextProvider.SqlQueryHandler

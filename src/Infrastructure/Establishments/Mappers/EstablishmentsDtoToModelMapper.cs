@@ -1,5 +1,7 @@
 ﻿using DfE.CleanArchitecture.Common.CrossCutting.Mapper;
 using DfE.GetInformationAboutSchools.Prototyping.Core.Establishments.Application.Model;
+using DfE.GetInformationAboutSchools.Prototyping.Core.Establishments.Application.Model.ValidationServices.Address;
+using DfE.GetInformationAboutSchools.Prototyping.Core.Establishments.Application.Model.ValidationServices.ContactDetails;
 using DfE.GetInformationAboutSchools.Prototyping.Infrastructure.Establishments.Model;
 using System.Buffers;
 
@@ -18,6 +20,26 @@ public sealed class EstablishmentsDtoToModelMapper :
         IEnumerable<EstablishmentDataTransferObject>,
         IReadOnlyCollection<Establishment>>
 {
+    private readonly IEstablishmentContactDetailsValidator _contactValidator;
+    private readonly IEstablishmentAddressValidator _addressValidator;
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="EstablishmentsDtoToModelMapper"/> class.
+    /// </summary>
+    /// <param name="contactValidator">
+    /// Validator used to enforce domain rules for contact details.
+    /// </param>
+    /// <param name="addressValidator">
+    /// Validator used to enforce domain rules for establishment addresses.
+    /// </param>
+    public EstablishmentsDtoToModelMapper(
+        IEstablishmentContactDetailsValidator contactValidator,
+        IEstablishmentAddressValidator addressValidator)
+    {
+        _contactValidator = contactValidator;
+        _addressValidator = addressValidator;
+    }
+
     /// <summary>
     /// Maps the supplied DTO collection into a corresponding collection of domain models.
     /// </summary>
@@ -55,10 +77,24 @@ public sealed class EstablishmentsDtoToModelMapper :
                 EstablishmentDetails details =
                     EstablishmentDetails.Create(
                         dto.EstablishmentName,
-                        dto.SchoolWebsite,
-                        dto.TelephoneNum);
+                        dto.TypeOfEstablishment_name,
+                        dto.PhaseOfEducation_name,
+                        EstablishmentStatus.Create(dto.EstablishmentStatus_code));
 
-                buffer[index++] = new Establishment(identifier, details);
+                EstablishmentContactDetails contactDetails =
+                    EstablishmentContactDetails.Create(
+                        dto.SchoolWebsite,
+                        dto.TelephoneNum,
+                        _contactValidator);
+
+                EstablishmentAddress address =
+                    EstablishmentAddress.Create(
+                        dto.Street,
+                        dto.Town,
+                        dto.Postcode,
+                        _addressValidator);
+
+                buffer[index++] = new Establishment(identifier, details, contactDetails, address);
             }
 
             // Copy only the populated portion into a new array.
