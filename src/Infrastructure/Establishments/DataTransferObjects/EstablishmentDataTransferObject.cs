@@ -8,6 +8,21 @@
 public sealed class EstablishmentDataTransferObject
 {
     /// <summary>
+    /// Default value assigned to string properties when no data is supplied.
+    /// </summary>
+    private const string DefaultValue = "UNDEFINED";
+
+    private string _establishmentName = DefaultValue;
+    private string _schoolWebsite = DefaultValue;
+    private string _telephoneNum = DefaultValue;
+    private string _establishmentType = DefaultValue;
+    private string _educationPhase = DefaultValue;
+    private string _street = DefaultValue;
+    private string _town = DefaultValue;
+    private string _postcode = DefaultValue;
+    private string _establishmentStatus = DefaultValue;
+
+    /// <summary>
     /// Gets or sets the unique numeric identifier (URN) assigned to the establishment.
     /// </summary>
     public int URN { get; set; }
@@ -15,48 +30,81 @@ public sealed class EstablishmentDataTransferObject
     /// <summary>
     /// Gets or sets the official name of the establishment.
     /// </summary>
-    public required string EstablishmentName { get; set; }
+    public string EstablishmentName
+    {
+        get => _establishmentName;
+        set => _establishmentName = string.IsNullOrWhiteSpace(value) ? DefaultValue : value;
+    }
 
     /// <summary>
     /// Gets or sets the website URL associated with the establishment.
     /// </summary>
-    public required string SchoolWebsite { get; set; }
+    public string SchoolWebsite
+    {
+        get => _schoolWebsite;
+        set => _schoolWebsite = string.IsNullOrWhiteSpace(value) ? DefaultValue : value;
+    }
 
     /// <summary>
     /// Gets or sets the establishment's telephone number.
     /// </summary>
-    public required string TelephoneNum { get; set; }
+    public string TelephoneNum
+    {
+        get => _telephoneNum;
+        set => _telephoneNum = string.IsNullOrWhiteSpace(value) ? DefaultValue : value;
+    }
 
     /// <summary>
-    /// Gets or sets the descriptive name of the establishment type
-    /// (e.g., Academy, Community School).
+    /// Gets or sets the descriptive name of the establishment type.
     /// </summary>
-    public required string TypeOfEstablishment_name { get; set; }
+    public string EstablishmentType
+    {
+        get => _establishmentType;
+        set => _establishmentType = string.IsNullOrWhiteSpace(value) ? DefaultValue : value;
+    }
 
     /// <summary>
-    /// Gets or sets the descriptive name of the establishment's phase of education
-    /// (e.g., Primary, Secondary).
+    /// Gets or sets the descriptive name of the establishment's phase of education.
     /// </summary>
-    public required string PhaseOfEducation_name { get; set; }
+    public string EducationPhase
+    {
+        get => _educationPhase;
+        set => _educationPhase = string.IsNullOrWhiteSpace(value) ? DefaultValue : value;
+    }
 
     /// <summary>
     /// Gets or sets the first line of the establishment's street address.
     /// </summary>
-    public required string Street { get; set; }
+    public string Street
+    {
+        get => _street;
+        set => _street = string.IsNullOrWhiteSpace(value) ? DefaultValue : value;
+    }
 
     /// <summary>
     /// Gets or sets the town or locality in which the establishment is located.
     /// </summary>
-    public required string Town { get; set; }
+    public string Town
+    {
+        get => _town;
+        set => _town = string.IsNullOrWhiteSpace(value) ? DefaultValue : value;
+    }
 
     /// <summary>
     /// Gets or sets the postcode associated with the establishment's address.
     /// </summary>
-    public required string Postcode { get; set; }
+    public string Postcode
+    {
+        get => _postcode;
+        set => _postcode = string.IsNullOrWhiteSpace(value) ? DefaultValue : value;
+    }
 
     /// <summary>
-    /// Gets or sets the numeric status code representing the establishment's
-    /// operational status (e.g., 1 = Open, 2 = Closed).
+    /// Gets or sets the descriptive status of the establishment.
     /// </summary>
-    public required int EstablishmentStatus_code { get; set; }
+    public string EstablishmentStatus
+    {
+        get => _establishmentStatus;
+        set => _establishmentStatus = string.IsNullOrWhiteSpace(value) ? DefaultValue : value;
+    }
 }

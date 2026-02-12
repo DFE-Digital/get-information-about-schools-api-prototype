@@ -1,6 +1,6 @@
 ﻿using DfE.GetInformationAboutSchools.Prototyping.Core.Establishments.Application.Model;
 using DfE.GetInformationAboutSchools.Prototyping.Core.Establishments.Infrastructure;
-using DfE.GetInformationAboutSchools.Prototyping.Core.Shared;
+using DfE.GetInformationAboutSchools.Prototyping.Core.Shared.Application.Usecases;
 using Microsoft.Extensions.Logging;
 
 namespace DfE.GetInformationAboutSchools.Prototyping.Core.Establishments.Application.Usecases.GetEstablishments;

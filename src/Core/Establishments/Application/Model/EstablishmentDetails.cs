@@ -39,13 +39,13 @@ public sealed class EstablishmentDetails : ValueObject<EstablishmentDetails>
     /// <summary>
     /// Gets the establishment's operational status (e.g., Open, Closed).
     /// </summary>
-    public EstablishmentStatus Status { get; }
+    public string Status { get; }
 
     private EstablishmentDetails(
         string name,
         string establishmentType,
         string phaseOfEducation,
-        EstablishmentStatus status)
+        string status)
     {
         Name = name;
         EstablishmentType = establishmentType;
@@ -71,27 +71,24 @@ public sealed class EstablishmentDetails : ValueObject<EstablishmentDetails>
         string? name,
         string? establishmentType,
         string? phaseOfEducation,
-        EstablishmentStatus status)
+        string? status)
     {
-        Validate(name, establishmentType, phaseOfEducation);
-        return new EstablishmentDetails(name!, establishmentType!, phaseOfEducation!, status);
+        name = name?.Trim();
+        establishmentType = establishmentType?.Trim();
+        phaseOfEducation = phaseOfEducation?.Trim();
+        status = status?.Trim();
+
+        Validate(name, establishmentType, phaseOfEducation, status);
+        return new EstablishmentDetails(name!, establishmentType!, phaseOfEducation!, status!);
     }
 
-    /// <summary>
-    /// Validates all supplied values and throws an exception if any domain rule
-    /// is violated.
-    /// </summary>
-    /// <param name="name">The establishment's name.</param>
-    /// <param name="establishmentType">The establishment's type.</param>
-    /// <param name="phaseOfEducation">The establishment's phase of education.</param>
-    /// <exception cref="EstablishmentException">
-    /// Thrown when validation fails.
-    /// </exception>
-    private static void Validate(string? name, string? establishmentType, string? phaseOfEducation)
+
+    private static void Validate(string? name, string? establishmentType, string? phaseOfEducation, string? status)
     {
         EnsureNameIsProvided(name);
         EnsureEstablishmentTypeIsProvided(establishmentType);
         EnsurePhaseOfEducationIsProvided(phaseOfEducation);
+        EnsureStatusIsProvided(status);
     }
 
     /// <summary>
@@ -134,6 +131,13 @@ public sealed class EstablishmentDetails : ValueObject<EstablishmentDetails>
         if (string.IsNullOrWhiteSpace(phaseOfEducation))
             throw new EstablishmentException(
                 "Establishment phase of education is required.");
+    }
+
+    private static void EnsureStatusIsProvided(string? Status)
+    {
+        if (string.IsNullOrWhiteSpace(Status))
+            throw new EstablishmentException(
+                "Establishment status is required.");
     }
 
     /// <summary>

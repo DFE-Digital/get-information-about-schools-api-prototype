@@ -1,7 +1,5 @@
 ﻿using DfE.CleanArchitecture.Common.CrossCutting.Mapper;
 using DfE.GetInformationAboutSchools.Prototyping.Core.Establishments.Application.Model;
-using DfE.GetInformationAboutSchools.Prototyping.Core.Establishments.Application.Model.ValidationServices.Address;
-using DfE.GetInformationAboutSchools.Prototyping.Core.Establishments.Application.Model.ValidationServices.ContactDetails;
 using DfE.GetInformationAboutSchools.Prototyping.Infrastructure.Establishments.Model;
 using System.Buffers;
 
@@ -12,32 +10,28 @@ namespace DfE.GetInformationAboutSchools.Prototyping.Infrastructure.Establishmen
 /// into a read-only collection of domain <see cref="Establishment"/> objects.
 /// </summary>
 /// <remarks>
-/// This mapper is optimised to minimise allocations by using <see cref="ArrayPool{T}"/>
-/// when constructing the intermediate buffer.
+/// Delegates single‑item mapping to <see cref="IMapper{TMapFrom, TMapTo}"/> and uses
+/// <see cref="ArrayPool{T}"/> to minimise allocations.
 /// </remarks>
 public sealed class EstablishmentsDtoToModelMapper :
-    IMapper<
-        IEnumerable<EstablishmentDataTransferObject>,
-        IReadOnlyCollection<Establishment>>
+    IMapper<IEnumerable<EstablishmentDataTransferObject>, IReadOnlyCollection<Establishment>>
 {
-    private readonly IEstablishmentContactDetailsValidator _contactValidator;
-    private readonly IEstablishmentAddressValidator _addressValidator;
+    /// <summary>
+    /// The mapper responsible for converting individual DTOs into domain models.
+    /// </summary>
+    private readonly IMapper<EstablishmentDataTransferObject, Establishment> _establishmentMapper;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="EstablishmentsDtoToModelMapper"/> class.
     /// </summary>
-    /// <param name="contactValidator">
-    /// Validator used to enforce domain rules for contact details.
-    /// </param>
-    /// <param name="addressValidator">
-    /// Validator used to enforce domain rules for establishment addresses.
+    /// <param name="establishmentMapper">
+    /// The mapper used to convert a single <see cref="EstablishmentDataTransferObject"/>
+    /// into a domain <see cref="Establishment"/>.
     /// </param>
     public EstablishmentsDtoToModelMapper(
-        IEstablishmentContactDetailsValidator contactValidator,
-        IEstablishmentAddressValidator addressValidator)
+        IMapper<EstablishmentDataTransferObject, Establishment> establishmentMapper)
     {
-        _contactValidator = contactValidator;
-        _addressValidator = addressValidator;
+        _establishmentMapper = establishmentMapper;
     }
 
     /// <summary>
@@ -52,12 +46,10 @@ public sealed class EstablishmentsDtoToModelMapper :
     /// <exception cref="ArgumentNullException">
     /// Thrown when <paramref name="input"/> is <c>null</c>.
     /// </exception>
-    public IReadOnlyCollection<Establishment> Map(
-        IEnumerable<EstablishmentDataTransferObject> input)
+    public IReadOnlyCollection<Establishment> Map(IEnumerable<EstablishmentDataTransferObject> input)
     {
         ArgumentNullException.ThrowIfNull(input);
 
-        // Materialise once to avoid multiple enumeration.
         ICollection<EstablishmentDataTransferObject> dtoList =
             input as ICollection<EstablishmentDataTransferObject> ?? [.. input];
 
@@ -70,34 +62,11 @@ public sealed class EstablishmentsDtoToModelMapper :
 
         try
         {
-            foreach (EstablishmentDataTransferObject dto in dtoList)
+            foreach (var dto in dtoList)
             {
-                EstablishmentIdentifier identifier = new(dto.URN);
-
-                EstablishmentDetails details =
-                    EstablishmentDetails.Create(
-                        dto.EstablishmentName,
-                        dto.TypeOfEstablishment_name,
-                        dto.PhaseOfEducation_name,
-                        EstablishmentStatus.Create(dto.EstablishmentStatus_code));
-
-                EstablishmentContactDetails contactDetails =
-                    EstablishmentContactDetails.Create(
-                        dto.SchoolWebsite,
-                        dto.TelephoneNum,
-                        _contactValidator);
-
-                EstablishmentAddress address =
-                    EstablishmentAddress.Create(
-                        dto.Street,
-                        dto.Town,
-                        dto.Postcode,
-                        _addressValidator);
-
-                buffer[index++] = new Establishment(identifier, details, contactDetails, address);
+                buffer[index++] = _establishmentMapper.Map(dto);
             }
 
-            // Copy only the populated portion into a new array.
             Establishment[] result = new Establishment[index];
             Array.Copy(buffer, result, index);
 
@@ -105,7 +74,6 @@ public sealed class EstablishmentsDtoToModelMapper :
         }
         finally
         {
-            // Clear only the used portion before returning to the pool.
             Array.Clear(buffer, 0, index);
             pool.Return(buffer);
         }

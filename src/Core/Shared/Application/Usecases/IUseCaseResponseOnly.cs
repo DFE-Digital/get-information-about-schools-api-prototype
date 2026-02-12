@@ -1,4 +1,4 @@
-﻿namespace DfE.GetInformationAboutSchools.Prototyping.Core.Shared;
+﻿namespace DfE.GetInformationAboutSchools.Prototyping.Core.Shared.Application.Usecases;
 
 /// <summary>
 /// Represents a use case that does not require an input request object,

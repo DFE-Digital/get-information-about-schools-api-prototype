@@ -1,10 +1,9 @@
-﻿using Dfe.Data.Common.Infrastructure.Persistence.Sql.Dapper.Handlers;
-using Dfe.Data.Common.Infrastructure.Persistence.Sql.Dapper.Providers.Database.Context;
-using DfE.CleanArchitecture.Common.CrossCutting.Mapper;
+﻿using DfE.CleanArchitecture.Common.CrossCutting.Mapper;
 using DfE.GetInformationAboutSchools.Prototyping.Core.Establishments.Application.Model;
 using DfE.GetInformationAboutSchools.Prototyping.Core.Establishments.Infrastructure;
 using DfE.GetInformationAboutSchools.Prototyping.Infrastructure.Establishments.Model;
-using System.Data;
+using DfE.GetInformationAboutSchools.Prototyping.Infrastructure.Shared;
+using System;
 
 namespace DfE.GetInformationAboutSchools.Prototyping.Infrastructure.Establishments;
 
@@ -15,92 +14,108 @@ namespace DfE.GetInformationAboutSchools.Prototyping.Infrastructure.Establishmen
 /// </summary>
 public sealed class EstablishmentsRepository : IEstablishmentsRepository
 {
-    private readonly IDbContextProvider _dbContextProvider;
-    private readonly IMapper<
-        IEnumerable<EstablishmentDataTransferObject>,
-        IReadOnlyCollection<Establishment>> _mapper;
+    private readonly ISqlReader _sqlReader;
+    private readonly IMapper<EstablishmentDataTransferObject, Establishment> _establishmentMapper;
+    private readonly IMapper<IEnumerable<EstablishmentDataTransferObject>, IReadOnlyCollection<Establishment>> _establishmentsMapper;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="EstablishmentsRepository"/> class.
     /// </summary>
-    /// <param name="dbContextProvider">
-    /// Provides database connections and transaction management.
-    /// </param>
-    /// <param name="mapper">
-    /// Maps collections of <see cref="EstablishmentDataTransferObject"/> into
-    /// domain <see cref="Establishment"/> objects.
-    /// </param>
+    /// <param name="sqlReader">Provides read‑only SQL query execution.</param>
+    /// <param name="establishmentMapper">Maps a single DTO into a domain <see cref="Establishment"/>.</param>
+    /// <param name="establishmentsMapper">Maps a collection of DTOs into domain <see cref="Establishment"/> objects.</param>
     public EstablishmentsRepository(
-        IDbContextProvider dbContextProvider,
-        IMapper<
-            IEnumerable<EstablishmentDataTransferObject>,
-            IReadOnlyCollection<Establishment>> mapper)
+        ISqlReader sqlReader,
+        IMapper<EstablishmentDataTransferObject, Establishment> establishmentMapper,
+        IMapper<IEnumerable<EstablishmentDataTransferObject>, IReadOnlyCollection<Establishment>> establishmentsMapper)
     {
-        _dbContextProvider = dbContextProvider;
-        _mapper = mapper;
+        _sqlReader = sqlReader;
+        _establishmentMapper = establishmentMapper;
+        _establishmentsMapper = establishmentsMapper;
+    }
+
+    /// <summary>
+    /// Retrieves a single establishment identified by its URN.
+    /// </summary>
+    /// <param name="urn">The unique reference number of the establishment to retrieve.</param>
+    /// <param name="cancellationToken">A token that may be used to cancel the operation.</param>
+    /// <returns>
+    /// A fully constructed <see cref="Establishment"/> instance representing the requested establishment.
+    /// </returns>
+    public async Task<Establishment> GetEstablishment(int urn, CancellationToken cancellationToken = default)
+    {
+        const string Sql =
+            """
+            SELECT
+                URN,
+                EstablishmentName,
+                et.name AS EstablishmentType,
+                ep.name AS EducationPhase,
+                WebsiteAddress,
+                TelephoneNumber,
+                Street,
+                Town,
+                Postcode,
+                es.name AS EstablishmentStatus
+            FROM Establishment AS e
+            INNER JOIN EducationPhase ep
+                ON e.educationPhase_code = ep.code
+            INNER JOIN EstablishmentType et
+                ON e.type_code = et.code
+            INNER JOIN EstablishmentStatus es
+                ON e.status_code = es.code
+            WHERE URN = @URN;
+            """;
+
+        var dto = await _sqlReader.QuerySingleAsync<EstablishmentDataTransferObject>(
+            Sql,
+            new { URN = urn },
+            cancellationToken);
+
+        return _establishmentMapper.Map(dto);
     }
 
     /// <summary>
     /// Retrieves all establishments from the database and maps them into
     /// domain <see cref="Establishment"/> instances.
     /// </summary>
-    /// <param name="cancellationToken">
-    /// A token that may be used to cancel the asynchronous operation.
-    /// </param>
+    /// <param name="cancellationToken">A token that may be used to cancel the asynchronous operation.</param>
     /// <returns>
     /// A read-only collection of <see cref="Establishment"/> objects representing
     /// the establishments stored in the database.
     /// </returns>
-    /// <remarks>
-    /// This method performs a read-only SQL query inside a transaction with
-    /// <see cref="IsolationLevel.ReadCommitted"/> isolation. The results are mapped
-    /// using the injected mapper and returned as an immutable collection.
-    /// </remarks>
     public async Task<IReadOnlyCollection<Establishment>> GetEstablishments(
         CancellationToken cancellationToken = default)
     {
-        IsolationLevel isolationLevel = IsolationLevel.ReadCommitted;
-
-        await using var dbTransaction =
-            await _dbContextProvider.BeginTransactionAsync(isolationLevel, cancellationToken);
-
-        const string SelectEstablishmentsSql =
+        const string Sql =
             """
             SELECT
                 URN,
                 EstablishmentName,
-                TypeOfEstablishment_name,
-                PhaseOfEducation_name,
-                SchoolWebsite,
-                TelephoneNum,
+                et.name AS EstablishmentType,
+                ep.name AS EducationPhase,
+                WebsiteAddress,
+                TelephoneNumber,
                 Street,
                 Town,
                 Postcode,
-                EstablishmentStatus_code
-            FROM Establishments;
+                es.name AS EstablishmentStatus
+            FROM Establishment AS e
+            INNER JOIN EducationPhase ep
+                ON e.educationPhase_code = ep.code
+            INNER JOIN EstablishmentType et
+                ON e.type_code = et.code
+            INNER JOIN EstablishmentStatus es
+                ON e.status_code = es.code;
             """;
 
-        IEnumerable<EstablishmentDataTransferObject> result =
-            await _dbContextProvider.SqlQueryHandler
-                .QueryAsync<EstablishmentDataTransferObject>(
-                    SelectEstablishmentsSql,
-                    dbTransaction,
-                    new SqlRequestOptions
-                    {
-                        Type = CommandType.Text,
-                        Parameters = new { URN = "" } // bug here... we need to make the Parameters option non-compulsory.
-                    },
-                    cancellationToken
-                );
+        var dtos = await _sqlReader.QueryAsync<EstablishmentDataTransferObject>(
+            Sql,
+            new { URN = "" },   // This is a bug and needs to be fixed in the sql framework to allow for no parameters to be passed in!
+            cancellationToken);
 
-        await dbTransaction.CommitAsync(cancellationToken);
+        var mapped = _establishmentsMapper.Map(dtos);
 
-        // Map DTOs to domain objects.
-        IReadOnlyCollection<Establishment> mapped = _mapper.Map(result);
-
-        // Convert to a true read-only wrapper.
-        Establishment[] array = [.. mapped];
-
-        return Array.AsReadOnly(array);
+        return Array.AsReadOnly([.. mapped]);
     }
 }

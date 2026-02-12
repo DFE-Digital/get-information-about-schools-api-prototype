@@ -1,8 +1,9 @@
 using DfE.CleanArchitecture.Common.CrossCutting.Mapper;
-using DfE.GetInformationAboutSchools.Prototyping.API.Establishments.GetEstablishments.Controllers.Response;
 using DfE.GetInformationAboutSchools.Prototyping.API.Establishments.ViewModels;
+using DfE.GetInformationAboutSchools.Prototyping.API.Shared.Response;
 using DfE.GetInformationAboutSchools.Prototyping.Core.Establishments.Application.Model;
-using DfE.GetInformationAboutSchools.Prototyping.Core.Shared;
+using DfE.GetInformationAboutSchools.Prototyping.Core.Establishments.Application.Usecases.GetEstablishment.Request;
+using DfE.GetInformationAboutSchools.Prototyping.Core.Shared.Application.Usecases;
 using Microsoft.AspNetCore.Mvc;
 using System.Runtime.CompilerServices;
 
@@ -14,28 +15,60 @@ public class EstablishmentsController : ControllerBase
 {
     private readonly ILogger<EstablishmentsController> _logger;
     private readonly IUseCaseResponseOnly<
-        UseCaseResponse<IReadOnlyCollection<Establishment>>> _useCase;
+        UseCaseResponse<IReadOnlyCollection<Establishment>>> _getEstablishmentsUseCase;
+    private readonly IUseCase<
+        GetEstablishmentByUrnRequest, UseCaseResponse<Establishment>> _getEstablishmentUseCase;
     private readonly ICsvResponseBuilder _csvResponseBuilder;
     private readonly IMapper<Establishment, EstablishmentViewModel> _modelToViewModelMapper;
 
     public EstablishmentsController(
         ILogger<EstablishmentsController> logger,
         IUseCaseResponseOnly<
-            UseCaseResponse<IReadOnlyCollection<Establishment>>> useCase,
+            UseCaseResponse<IReadOnlyCollection<Establishment>>> getEstablishmentsUseCase,
+        IUseCase<
+             GetEstablishmentByUrnRequest, UseCaseResponse<Establishment>> getEstablishmentUseCase,
         ICsvResponseBuilder csvResponseBuilder,
         IMapper<Establishment, EstablishmentViewModel> modelToViewModelMapper)
     {
         _logger = logger;
-        _useCase = useCase;
+        _getEstablishmentUseCase = getEstablishmentUseCase;
+        _getEstablishmentsUseCase = getEstablishmentsUseCase;
         _csvResponseBuilder = csvResponseBuilder;
         _modelToViewModelMapper = modelToViewModelMapper;
+    }
+
+    [HttpGet("{urn:int}", Name = "GetEstablishmentByUrn")]
+    public async Task<IActionResult> GetByUrn(int urn, CancellationToken cancellationToken = default)
+    {
+        UseCaseResponse<Establishment> result =
+            await _getEstablishmentUseCase
+                .HandleRequestAsync(
+                    GetEstablishmentByUrnRequest.Create(urn), cancellationToken);
+
+        if (!result.SuccessfulRequest)
+        {
+            return Problem(
+                detail: result.ErrorMessage ?? "Unknown error",
+                statusCode: StatusCodes.Status500InternalServerError);
+        }
+
+        if (!result.HasValidModel())
+        {
+            return NotFound($"No establishment found for URN {urn}.");
+        }
+
+        EstablishmentViewModel viewModel =
+            _modelToViewModelMapper.Map(result.Model!);
+
+        return Ok(viewModel);
     }
 
     [HttpGet(Name = "GetEstablishments")]
     public async Task<IActionResult> Get(CancellationToken cancellationToken = default)
     {
         UseCaseResponse<IReadOnlyCollection<Establishment>> result =
-            await _useCase.HandleRequestAsync(cancellationToken);
+            await _getEstablishmentsUseCase
+                .HandleRequestAsync(cancellationToken);
 
         if (!result.SuccessfulRequest)
         {
@@ -71,7 +104,8 @@ public class EstablishmentsController : ControllerBase
     public async Task<IActionResult> GetCsv(CancellationToken cancellationToken)
     {
         UseCaseResponse<IReadOnlyCollection<Establishment>> result =
-            await _useCase.HandleRequestAsync(cancellationToken);
+            await _getEstablishmentsUseCase
+                .HandleRequestAsync(cancellationToken);
 
         if (!result.SuccessfulRequest)
         {
@@ -107,7 +141,7 @@ public class EstablishmentsController : ControllerBase
                 row.BasicDetails?.Name!,
                 row.BasicDetails?.EstablishmentType!,
                 row.BasicDetails?.PhaseOfEducation!,
-                row.BasicDetails?.Status.Name!,
+                row.BasicDetails?.Status!,
                 row.Address.Street!,
                 row.Address.Town!,
                 row.Address.Postcode!

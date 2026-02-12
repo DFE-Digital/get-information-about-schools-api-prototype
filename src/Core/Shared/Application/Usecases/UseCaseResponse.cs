@@ -1,4 +1,4 @@
-﻿namespace DfE.GetInformationAboutSchools.Prototyping.Core.Shared;
+﻿namespace DfE.GetInformationAboutSchools.Prototyping.Core.Shared.Application.Usecases;
 
 /// <summary>
 /// Represents the outcome of a typical use-case operation,

@@ -54,9 +54,9 @@ public sealed partial class EstablishmentIdentifier : ValueObject<EstablishmentI
         UrnValidation().IsMatch(urn.ToString());
 
     /// <summary>
-    /// Regular expression pattern for validating a 6‑digit URN.
+    /// Regular expression pattern for validating a 5 to 7‑digit URN.
     /// </summary>
-    private const string UrnPattern = @"^\d{6}$";
+    private const string UrnPattern = @"^\d{5,7}$";
 
     /// <summary>
     /// Compiled regular expression for URN validation.

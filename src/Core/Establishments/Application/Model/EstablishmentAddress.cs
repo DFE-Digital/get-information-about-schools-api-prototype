@@ -67,6 +67,10 @@ public sealed partial class EstablishmentAddress : ValueObject<EstablishmentAddr
         string? postcode,
         IEstablishmentAddressValidator validator)
     {
+        street = street?.Trim();
+        town = town?.Trim();
+        postcode = postcode?.Trim();
+
         Validate(street, town, postcode, validator);
         return new EstablishmentAddress(street!, town!, postcode!);
     }

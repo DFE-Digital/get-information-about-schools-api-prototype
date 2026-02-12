@@ -17,7 +17,7 @@ public sealed class EstablishmentModelToViewModelMapper : IMapper<Establishment,
             Type = input.BasicDetails.EstablishmentType,
             PhaseOfEducation = input.BasicDetails.PhaseOfEducation,
             Address = input.Address,
-            StatusCode = input.BasicDetails.Status.Name
+            StatusCode = input.BasicDetails.Status
         };
     }
 }

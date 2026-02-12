@@ -62,6 +62,9 @@ public sealed partial class EstablishmentContactDetails : ValueObject<Establishm
         string? telephoneNumber,
         IEstablishmentContactDetailsValidator validator)
     {
+        websiteUrl = websiteUrl?.Trim();
+        telephoneNumber = telephoneNumber?.Trim();
+
         Validate(websiteUrl, telephoneNumber, validator);
         return new EstablishmentContactDetails(websiteUrl, telephoneNumber);
     }
