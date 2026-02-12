@@ -82,8 +82,22 @@ public sealed class EstablishmentDetails : ValueObject<EstablishmentDetails>
         return new EstablishmentDetails(name!, establishmentType!, phaseOfEducation!, status!);
     }
 
-
-    private static void Validate(string? name, string? establishmentType, string? phaseOfEducation, string? status)
+    /// <summary>
+    /// Validates all supplied establishment details by enforcing the domain
+    /// invariants for each required field.
+    /// </summary>
+    /// <param name="name">The establishment's official name.</param>
+    /// <param name="establishmentType">The establishment's type.</param>
+    /// <param name="phaseOfEducation">The establishment's phase of education.</param>
+    /// <param name="status">The establishment's operational status.</param>
+    /// <exception cref="EstablishmentException">
+    /// Thrown when any supplied value fails its corresponding validation rule.
+    /// </exception>
+    private static void Validate(
+        string? name,
+        string? establishmentType,
+        string? phaseOfEducation,
+        string? status)
     {
         EnsureNameIsProvided(name);
         EnsureEstablishmentTypeIsProvided(establishmentType);
@@ -101,8 +115,7 @@ public sealed class EstablishmentDetails : ValueObject<EstablishmentDetails>
     private static void EnsureNameIsProvided(string? name)
     {
         if (string.IsNullOrWhiteSpace(name))
-            throw new EstablishmentException(
-                "Establishment name is required.");
+            throw new EstablishmentException("Establishment name is required.");
     }
 
     /// <summary>
@@ -115,8 +128,7 @@ public sealed class EstablishmentDetails : ValueObject<EstablishmentDetails>
     private static void EnsureEstablishmentTypeIsProvided(string? establishmentType)
     {
         if (string.IsNullOrWhiteSpace(establishmentType))
-            throw new EstablishmentException(
-                "Establishment type is required.");
+            throw new EstablishmentException("Establishment type is required.");
     }
 
     /// <summary>
@@ -129,15 +141,20 @@ public sealed class EstablishmentDetails : ValueObject<EstablishmentDetails>
     private static void EnsurePhaseOfEducationIsProvided(string? phaseOfEducation)
     {
         if (string.IsNullOrWhiteSpace(phaseOfEducation))
-            throw new EstablishmentException(
-                "Establishment phase of education is required.");
+            throw new EstablishmentException("Establishment phase of education is required.");
     }
 
-    private static void EnsureStatusIsProvided(string? Status)
+    /// <summary>
+    /// Ensures that the establishment's operational status is present and non‑empty.
+    /// </summary>
+    /// <param name="status">The operational status to validate.</param>
+    /// <exception cref="EstablishmentException">
+    /// Thrown when the status is null, empty, or whitespace.
+    /// </exception>
+    private static void EnsureStatusIsProvided(string? status)
     {
-        if (string.IsNullOrWhiteSpace(Status))
-            throw new EstablishmentException(
-                "Establishment status is required.");
+        if (string.IsNullOrWhiteSpace(status))
+            throw new EstablishmentException("Establishment status is required.");
     }
 
     /// <summary>
