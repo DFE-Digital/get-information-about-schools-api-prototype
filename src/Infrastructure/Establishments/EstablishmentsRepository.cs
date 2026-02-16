@@ -3,7 +3,6 @@ using DfE.GetInformationAboutSchools.Prototyping.Core.Establishments.Application
 using DfE.GetInformationAboutSchools.Prototyping.Core.Establishments.Infrastructure;
 using DfE.GetInformationAboutSchools.Prototyping.Infrastructure.Establishments.Model;
 using DfE.GetInformationAboutSchools.Prototyping.Infrastructure.Shared;
-using System;
 
 namespace DfE.GetInformationAboutSchools.Prototyping.Infrastructure.Establishments;
 
@@ -67,10 +66,11 @@ public sealed class EstablishmentsRepository : IEstablishmentsRepository
             WHERE URN = @URN;
             """;
 
-        var dto = await _sqlReader.QuerySingleAsync<EstablishmentDataTransferObject>(
-            Sql,
-            new { URN = urn },
-            cancellationToken);
+        EstablishmentDataTransferObject? dto =
+            await _sqlReader.QuerySingleAsync<EstablishmentDataTransferObject>(
+                Sql,
+                new { URN = urn },
+                cancellationToken);
 
         return _establishmentMapper.Map(dto);
     }
@@ -109,10 +109,11 @@ public sealed class EstablishmentsRepository : IEstablishmentsRepository
                 ON e.status_code = es.code;
             """;
 
-        var dtos = await _sqlReader.QueryAsync<EstablishmentDataTransferObject>(
-            Sql,
-            new { URN = "" },   // This is a bug and needs to be fixed in the sql framework to allow for no parameters to be passed in!
-            cancellationToken);
+        IEnumerable<EstablishmentDataTransferObject> dtos =
+            await _sqlReader.QueryAsync<EstablishmentDataTransferObject>(
+                Sql,
+                new { URN = "" },   // This is a bug and needs to be fixed in the sql framework to allow for no parameters to be passed in!
+                cancellationToken);
 
         var mapped = _establishmentsMapper.Map(dtos);
 

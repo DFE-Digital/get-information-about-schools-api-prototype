@@ -96,5 +96,4 @@ public class RegexValidationService : IRegexValidationService
 
         return regex.IsMatch(value);
     }
-
 }

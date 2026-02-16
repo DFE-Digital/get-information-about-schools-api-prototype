@@ -3,6 +3,8 @@ using DfE.CleanArchitecture.Common.CrossCutting.Mapper;
 using DfE.GetInformationAboutSchools.Prototyping.API.Establishments.Mappers;
 using DfE.GetInformationAboutSchools.Prototyping.API.Establishments.ViewModels;
 using DfE.GetInformationAboutSchools.Prototyping.API.Shared.Response;
+using DfE.GetInformationAboutSchools.Prototyping.API.Shared.Response.Mappers;
+using DfE.GetInformationAboutSchools.Prototyping.API.Shared.Response.Mappers.Options;
 using DfE.GetInformationAboutSchools.Prototyping.Core.Establishments;
 using DfE.GetInformationAboutSchools.Prototyping.Core.Establishments.Application.Model;
 using DfE.GetInformationAboutSchools.Prototyping.Core.Establishments.ValidationServices;
@@ -17,7 +19,6 @@ using System.Text.Json.Serialization;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddLogging();
@@ -28,10 +29,16 @@ builder.Services.AddSingleton<IMapper<
     Establishment, EstablishmentViewModel>, EstablishmentModelToViewModelMapper>();
 builder.Services.AddSingleton<IMapper<
     EstablishmentDataTransferObject, Establishment>, EstablishmentDtoToModelMapper>();
+builder.Services.AddSingleton<IMapper<
+    Establishment, string[]>, ModelToCsvMapper>();
 
 builder.Services
     .Configure<ValidationPatterns>(
         builder.Configuration.GetSection("ValidationPatterns"));
+
+builder.Services
+    .Configure<CsvMappingOptions>(
+        builder.Configuration.GetSection("CsvMappings:Establishment"));
 
 // SQL Server connection string
 var sqlServerConnectionString = builder.Configuration.GetConnectionString("Edubase");

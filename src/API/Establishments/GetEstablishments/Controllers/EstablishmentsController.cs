@@ -1,6 +1,7 @@
 using DfE.CleanArchitecture.Common.CrossCutting.Mapper;
 using DfE.GetInformationAboutSchools.Prototyping.API.Establishments.ViewModels;
 using DfE.GetInformationAboutSchools.Prototyping.API.Shared.Response;
+using DfE.GetInformationAboutSchools.Prototyping.API.Shared.Response.Mappers;
 using DfE.GetInformationAboutSchools.Prototyping.Core.Establishments.Application.Model;
 using DfE.GetInformationAboutSchools.Prototyping.Core.Establishments.Application.Usecases.GetEstablishment.Request;
 using DfE.GetInformationAboutSchools.Prototyping.Core.Shared.Application.Usecases;
@@ -20,6 +21,7 @@ public class EstablishmentsController : ControllerBase
         GetEstablishmentByUrnRequest, UseCaseResponse<Establishment>> _getEstablishmentUseCase;
     private readonly ICsvResponseBuilder _csvResponseBuilder;
     private readonly IMapper<Establishment, EstablishmentViewModel> _modelToViewModelMapper;
+    private readonly ModelToCsvMapper _modelToCsvMapper;
 
     public EstablishmentsController(
         ILogger<EstablishmentsController> logger,
@@ -28,13 +30,18 @@ public class EstablishmentsController : ControllerBase
         IUseCase<
              GetEstablishmentByUrnRequest, UseCaseResponse<Establishment>> getEstablishmentUseCase,
         ICsvResponseBuilder csvResponseBuilder,
-        IMapper<Establishment, EstablishmentViewModel> modelToViewModelMapper)
+        IMapper<Establishment, EstablishmentViewModel> modelToViewModelMapper,
+        IMapper<Establishment, string[]> modelToCsvMapper)
     {
         _logger = logger;
         _getEstablishmentUseCase = getEstablishmentUseCase;
         _getEstablishmentsUseCase = getEstablishmentsUseCase;
         _csvResponseBuilder = csvResponseBuilder;
         _modelToViewModelMapper = modelToViewModelMapper;
+
+        _modelToCsvMapper =
+            modelToCsvMapper as ModelToCsvMapper
+            ?? throw new InvalidOperationException("Expected ModelToCsvMapper instance.");
     }
 
     [HttpGet("{urn:int}", Name = "GetEstablishmentByUrn")]
@@ -45,15 +52,13 @@ public class EstablishmentsController : ControllerBase
                 .HandleRequestAsync(
                     GetEstablishmentByUrnRequest.Create(urn), cancellationToken);
 
-        if (!result.SuccessfulRequest)
-        {
+        if (!result.SuccessfulRequest){
             return Problem(
                 detail: result.ErrorMessage ?? "Unknown error",
                 statusCode: StatusCodes.Status500InternalServerError);
         }
 
-        if (!result.HasValidModel())
-        {
+        if (!result.HasValidModel()){
             return NotFound($"No establishment found for URN {urn}.");
         }
 
@@ -107,46 +112,26 @@ public class EstablishmentsController : ControllerBase
             await _getEstablishmentsUseCase
                 .HandleRequestAsync(cancellationToken);
 
-        if (!result.SuccessfulRequest)
-        {
+        if (!result.SuccessfulRequest){
             return Problem(
                 detail: result.ErrorMessage ?? "Unknown error",
                 statusCode: StatusCodes.Status500InternalServerError);
         }
 
-        if (!result.HasValidModel())
-        {
+        if (!result.HasValidModel()){
             return Problem(
                 detail: "Use case returned no data.",
                 statusCode: StatusCodes.Status500InternalServerError);
         }
 
         // Delegate the entire CSV streaming workflow to the response builder.
-        return await _csvResponseBuilder.WriteCsvAsync(
-            Response,
-            result.Model!,
-            [
-                "URN",
-                "EstablishmentName",
-                "EstablishmentType",
-                "PhaseOfEducation",
-                "StatusCode",
-                "Address_Street",
-                "Address_Town",
-                "Address_Postcode"
-            ],
-            row =>
-            [
-                row.Identifier!.Urn.ToString(),
-                row.BasicDetails?.Name!,
-                row.BasicDetails?.EstablishmentType!,
-                row.BasicDetails?.PhaseOfEducation!,
-                row.BasicDetails?.Status!,
-                row.Address.Street!,
-                row.Address.Town!,
-                row.Address.Postcode!
-            ],
-            "establishments.csv",
-            cancellationToken);
+        return await
+            _csvResponseBuilder.WriteCsvAsync(
+                Response,
+                rows: result.Model!,
+                headerColumns: _modelToCsvMapper.Headers,
+                rowSelector: row => _modelToCsvMapper.Map(row),
+                fileName: "establishments.csv",
+                cancellationToken);
     }
 }

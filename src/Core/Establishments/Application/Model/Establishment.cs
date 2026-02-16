@@ -6,18 +6,27 @@ namespace DfE.GetInformationAboutSchools.Prototyping.Core.Establishments.Applica
 /// Aggregate root representing an establishment within the domain.
 /// </summary>
 /// <remarks>
-/// The aggregate is immutable and only enforces structural completeness.
-/// All supplied value objects are assumed to be pre‑validated.
+/// This aggregate is immutable and enforces structural completeness only.
+/// All supplied value objects are assumed to be pre‑validated by their
+/// respective factories or validators.
 /// </remarks>
 public sealed class Establishment : AggregateRoot<EstablishmentIdentifier>
 {
     /// <summary>
-    /// Gets the core details of the establishment.
+    /// Gets the core descriptive details of the establishment, such as
+    /// name, type, phase of education, and operational status.
     /// </summary>
     public EstablishmentDetails BasicDetails { get; }
 
+    /// <summary>
+    /// Gets the validated contact details for the establishment, including
+    /// website and telephone information.
+    /// </summary>
     public EstablishmentContactDetails ContactDetails { get; }
 
+    /// <summary>
+    /// Gets the validated physical address of the establishment.
+    /// </summary>
     public EstablishmentAddress Address { get; }
 
     /// <summary>
@@ -27,10 +36,19 @@ public sealed class Establishment : AggregateRoot<EstablishmentIdentifier>
     /// The unique identifier assigned to this establishment.
     /// </param>
     /// <param name="basicDetails">
-    /// A valid <see cref="EstablishmentDetails"/> instance describing the establishment.
+    /// A valid <see cref="EstablishmentDetails"/> instance describing the
+    /// establishment’s core characteristics.
+    /// </param>
+    /// <param name="contactDetails">
+    /// A valid <see cref="EstablishmentContactDetails"/> instance containing
+    /// communication details for the establishment.
+    /// </param>
+    /// <param name="address">
+    /// A valid <see cref="EstablishmentAddress"/> instance representing the
+    /// establishment’s physical location.
     /// </param>
     /// <exception cref="EstablishmentException">
-    /// Thrown when <paramref name="basicDetails"/> is <c>null</c>.
+    /// Thrown when any supplied value object is <c>null</c>.
     /// </exception>
     public Establishment(
         EstablishmentIdentifier identifier,
@@ -42,9 +60,9 @@ public sealed class Establishment : AggregateRoot<EstablishmentIdentifier>
         BasicDetails = basicDetails
             ?? throw new EstablishmentException(
                 "An initialised 'EstablishmentDetails' object must be provided.");
-        
-        ContactDetails = contactDetails ??
-            throw new EstablishmentException(
+
+        ContactDetails = contactDetails
+            ?? throw new EstablishmentException(
                 "An initialised 'EstablishmentContactDetails' object must be provided.");
 
         Address = address
@@ -53,11 +71,15 @@ public sealed class Establishment : AggregateRoot<EstablishmentIdentifier>
     }
 
     /// <summary>
-    /// Creates a new establishment aggregate.
+    /// Creates a new <see cref="Establishment"/> aggregate instance.
     /// </summary>
-    /// <param name="identifier">The establishment's unique identifier.</param>
+    /// <param name="identifier">The establishment’s unique identifier.</param>
     /// <param name="basicDetails">Validated establishment details.</param>
-    /// <returns>A new <see cref="Establishment"/> instance.</returns>
+    /// <param name="contactDetails">Validated contact details.</param>
+    /// <param name="address">Validated establishment address.</param>
+    /// <returns>
+    /// A fully constructed <see cref="Establishment"/> aggregate.
+    /// </returns>
     public static Establishment Create(
         EstablishmentIdentifier identifier,
         EstablishmentDetails basicDetails,
