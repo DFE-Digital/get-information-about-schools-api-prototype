@@ -12,7 +12,7 @@ namespace DfE.GetInformationAboutSchools.Prototyping.API.Establishments.GetEstab
 
 [ApiController]
 [Route("[controller]")]
-public class EstablishmentsController : ControllerBase
+public sealed class EstablishmentsController : ControllerBase
 {
     private readonly ILogger<EstablishmentsController> _logger;
     private readonly IUseCaseResponseOnly<
@@ -120,7 +120,7 @@ public class EstablishmentsController : ControllerBase
 
         if (!result.HasValidModel()){
             return Problem(
-                detail: "Use case returned no data.",
+                detail: "Use case returned no establishment data.",
                 statusCode: StatusCodes.Status500InternalServerError);
         }
 

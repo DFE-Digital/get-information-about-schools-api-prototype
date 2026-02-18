@@ -1,16 +1,21 @@
 using Dfe.Data.Common.Infrastructure.Persistence.Sql.Dapper;
 using DfE.CleanArchitecture.Common.CrossCutting.Mapper;
+using DfE.GetInformationAboutSchools.Prototyping.API.EstablishmentGroups.Mappers;
+using DfE.GetInformationAboutSchools.Prototyping.API.EstablishmentGroups.ViewModels;
 using DfE.GetInformationAboutSchools.Prototyping.API.Establishments.Mappers;
 using DfE.GetInformationAboutSchools.Prototyping.API.Establishments.ViewModels;
 using DfE.GetInformationAboutSchools.Prototyping.API.Shared.Response;
 using DfE.GetInformationAboutSchools.Prototyping.API.Shared.Response.Mappers;
 using DfE.GetInformationAboutSchools.Prototyping.API.Shared.Response.Mappers.Options;
+using DfE.GetInformationAboutSchools.Prototyping.Core.EstablishmentGroups.Application.Model;
 using DfE.GetInformationAboutSchools.Prototyping.Core.Establishments;
 using DfE.GetInformationAboutSchools.Prototyping.Core.Establishments.Application.Model;
 using DfE.GetInformationAboutSchools.Prototyping.Core.Establishments.ValidationServices;
+using DfE.GetInformationAboutSchools.Prototyping.Core.Groups;
 using DfE.GetInformationAboutSchools.Prototyping.Infrastructure.Establishments;
 using DfE.GetInformationAboutSchools.Prototyping.Infrastructure.Establishments.Mappers;
 using DfE.GetInformationAboutSchools.Prototyping.Infrastructure.Establishments.Model;
+using DfE.GetInformationAboutSchools.Prototyping.Infrastructure.EstablishmentGroups;
 using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.Data.SqlClient;
 using System.Text.Json;
@@ -24,6 +29,8 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddLogging();
 builder.Services.AddEstablishmentUseCaseDependencies();
 builder.Services.AddEstablishmentInfrastructureDependencies();
+builder.Services.AddGroupInfrastructureDependencies();
+builder.Services.AddGroupUseCaseDependencies();
 builder.Services.AddSingleton<ICsvResponseBuilder, CsvResponseBuilder>();
 builder.Services.AddSingleton<IMapper<
     Establishment, EstablishmentViewModel>, EstablishmentModelToViewModelMapper>();
@@ -31,6 +38,8 @@ builder.Services.AddSingleton<IMapper<
     EstablishmentDataTransferObject, Establishment>, EstablishmentDtoToModelMapper>();
 builder.Services.AddSingleton<IMapper<
     Establishment, string[]>, ModelToCsvMapper>();
+builder.Services.AddSingleton<
+    IMapper<EstablishmentGroup, EstablishmentGroupViewModel>, EstablishmentGroupModelToViewModelMapper>();
 
 builder.Services
     .Configure<ValidationPatterns>(

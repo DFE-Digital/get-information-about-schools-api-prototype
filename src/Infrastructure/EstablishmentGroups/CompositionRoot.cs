@@ -1,21 +1,21 @@
 ﻿using DfE.CleanArchitecture.Common.CrossCutting.Mapper;
-using DfE.GetInformationAboutSchools.Prototyping.Core.Establishments.Application.Model;
-using DfE.GetInformationAboutSchools.Prototyping.Core.Establishments.Infrastructure;
-using DfE.GetInformationAboutSchools.Prototyping.Infrastructure.Establishments.Mappers;
-using DfE.GetInformationAboutSchools.Prototyping.Infrastructure.Establishments.Model;
+using DfE.GetInformationAboutSchools.Prototyping.Core.EstablishmentGroups.Application.Model;
+using DfE.GetInformationAboutSchools.Prototyping.Core.Groups.Infrastructure;
+using DfE.GetInformationAboutSchools.Prototyping.Infrastructure.EstablishmentGroups.DataTransferObjects;
+using DfE.GetInformationAboutSchools.Prototyping.Infrastructure.EstablishmentGroups.Mappers;
 using DfE.GetInformationAboutSchools.Prototyping.Infrastructure.Shared;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace DfE.GetInformationAboutSchools.Prototyping.Infrastructure.Establishments;
+namespace DfE.GetInformationAboutSchools.Prototyping.Infrastructure.EstablishmentGroups;
 
 /// <summary>
-/// Provides extension methods for registering Establishment‑related
+/// Provides extension methods for registering Group‑related
 /// infrastructure dependencies into an <see cref="IServiceCollection"/>.
 /// </summary>
 public static class CompositionRoot
 {
     /// <summary>
-    /// Registers Establishment infrastructure services, including:
+    /// Registers Group infrastructure services, including:
     /// <list type="bullet">
     /// <item>
     /// <description>
@@ -24,13 +24,13 @@ public static class CompositionRoot
     /// </item>
     /// <item>
     /// <description>
-    /// <see cref="IEstablishmentsRepository"/> – the repository responsible for
-    /// retrieving Establishment domain models.
+    /// <see cref="IEstablishmentGroupsRepository"/> – the repository responsible for
+    /// retrieving Group domain models.
     /// </description>
     /// </item>
     /// <item>
     /// <description>
-    /// DTO‑to‑domain mappers used by the repository.
+    /// DTO‑to‑domain mappers used by the Groups repository.
     /// </description>
     /// </item>
     /// </list>
@@ -39,7 +39,7 @@ public static class CompositionRoot
     /// application's data access pipeline.
     /// </summary>
     /// <param name="services">
-    /// The <see cref="IServiceCollection"/> to which the infrastructure
+    /// The <see cref="IServiceCollection"/> to which the Group infrastructure
     /// dependencies will be added.
     /// </param>
     /// <returns>
@@ -55,25 +55,25 @@ public static class CompositionRoot
     /// because it depends on <c>IDbContextProvider</c>, which is also scoped.
     /// </para>
     /// <para>
-    /// The <see cref="IEstablishmentsRepository"/> is likewise registered as scoped,
+    /// The <see cref="IEstablishmentGroupsRepository"/> is likewise registered as scoped,
     /// ensuring each HTTP request receives its own repository instance with its
     /// own SQL reader and mappers.
     /// </para>
     /// </remarks>
-    public static IServiceCollection AddEstablishmentInfrastructureDependencies(
+    public static IServiceCollection AddGroupInfrastructureDependencies(
         this IServiceCollection services)
     {
         ArgumentNullException.ThrowIfNull(services);
 
         return services
             .AddScoped<ISqlReader, SqlReader>()
-            .AddScoped<IEstablishmentsRepository, EstablishmentsRepository>()
+            .AddScoped<IEstablishmentGroupsRepository, EstablishmentGroupsRepository>()
             .AddSingleton<IMapper<
-                IEnumerable<EstablishmentDataTransferObject>,
-                IReadOnlyCollection<Establishment>>,
-                    EstablishmentsDtoToModelMapper>()
+                IEnumerable<EstablishmentGroupDataTransferObject>,
+                IReadOnlyCollection<EstablishmentGroup>>,
+                    EstablishmentGroupsDtoToModelMapper>()
             .AddSingleton<IMapper<
-                EstablishmentDataTransferObject, Establishment>,
-                    EstablishmentDtoToModelMapper>();
+                EstablishmentGroupDataTransferObject, EstablishmentGroup>,
+                    EstablishmentGroupDtoToModelMapper>();
     }
 }
