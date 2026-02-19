@@ -36,21 +36,17 @@ builder.Services.AddSingleton<IMapper<
     Establishment, EstablishmentViewModel>, EstablishmentModelToViewModelMapper>();
 builder.Services.AddSingleton<IMapper<
     EstablishmentDataTransferObject, Establishment>, EstablishmentDtoToModelMapper>();
+builder.Services.Configure<CsvMappingDictionary>(
+    builder.Configuration.GetSection("CsvMappings"));
 builder.Services.AddSingleton<
-    IMapper<Establishment, string[]>, ModelToCsvMapper<Establishment>>();
+    ICsvMapper<EstablishmentGroup>, ModelToCsvMapper<EstablishmentGroup>>();
 builder.Services.AddSingleton<
-    IMapper<EstablishmentGroup, string[]>, ModelToCsvMapper<EstablishmentGroup>>();
+    ICsvMapper<Establishment>, ModelToCsvMapper<Establishment>>();
 builder.Services.AddSingleton<
     IMapper<EstablishmentGroup, EstablishmentGroupViewModel>, EstablishmentGroupModelToViewModelMapper>();
 builder.Services
     .Configure<ValidationPatterns>(
         builder.Configuration.GetSection("ValidationPatterns"));
-builder.Services
-    .Configure<CsvMappingOptions>(
-        builder.Configuration.GetSection("CsvMappings:Establishment"));
-builder.Services.Configure<CsvMappingDictionary>(
-    builder.Configuration.GetSection("CsvMappings"));
-
 
 // SQL Server connection string
 var sqlServerConnectionString = builder.Configuration.GetConnectionString("Edubase");

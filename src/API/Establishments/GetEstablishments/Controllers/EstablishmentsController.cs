@@ -21,7 +21,7 @@ public sealed class EstablishmentsController : ControllerBase
         GetEstablishmentByUrnRequest, UseCaseResponse<Establishment>> _getEstablishmentUseCase;
     private readonly IMapper<Establishment, EstablishmentViewModel> _modelToViewModelMapper;
     private readonly ICsvResponseBuilder _csvResponseBuilder;
-    private readonly ModelToCsvMapper<Establishment> _modelToCsvMapper;
+    private readonly ICsvMapper<Establishment> _modelToCsvMapper;
 
     public EstablishmentsController(
         ILogger<EstablishmentsController> logger,
@@ -31,17 +31,14 @@ public sealed class EstablishmentsController : ControllerBase
              GetEstablishmentByUrnRequest, UseCaseResponse<Establishment>> getEstablishmentUseCase,
         ICsvResponseBuilder csvResponseBuilder,
         IMapper<Establishment, EstablishmentViewModel> modelToViewModelMapper,
-        IMapper<Establishment, string[]> modelToCsvMapper)
+        ICsvMapper<Establishment> modelToCsvMapper)
     {
         _logger = logger;
         _getEstablishmentUseCase = getEstablishmentUseCase;
         _getEstablishmentsUseCase = getEstablishmentsUseCase;
         _csvResponseBuilder = csvResponseBuilder;
         _modelToViewModelMapper = modelToViewModelMapper;
-
-        _modelToCsvMapper =
-            modelToCsvMapper as ModelToCsvMapper<Establishment>
-            ?? throw new InvalidOperationException("Expected ModelToCsvMapper instance.");
+        _modelToCsvMapper = modelToCsvMapper;
     }
 
     [HttpGet("{urn:int}", Name = "GetEstablishmentByUrn")]
@@ -52,13 +49,15 @@ public sealed class EstablishmentsController : ControllerBase
                 .HandleRequestAsync(
                     GetEstablishmentByUrnRequest.Create(urn), cancellationToken);
 
-        if (!result.SuccessfulRequest){
+        if (!result.SuccessfulRequest)
+        {
             return Problem(
                 detail: result.ErrorMessage ?? "Unknown error",
                 statusCode: StatusCodes.Status500InternalServerError);
         }
 
-        if (!result.HasValidModel()){
+        if (!result.HasValidModel())
+        {
             return NotFound($"No establishment found for URN {urn}.");
         }
 
@@ -89,7 +88,7 @@ public sealed class EstablishmentsController : ControllerBase
                 statusCode: StatusCodes.Status404NotFound);
         }
 
-        #pragma warning disable CS1998
+#pragma warning disable CS1998
         async IAsyncEnumerable<EstablishmentViewModel> StreamResults(
             [EnumeratorCancellation] CancellationToken ct = default)
         {
@@ -100,7 +99,7 @@ public sealed class EstablishmentsController : ControllerBase
                 yield return _modelToViewModelMapper.Map(establishment);
             }
         }
-        #pragma warning restore CS1998
+#pragma warning restore CS1998
 
         return Ok(StreamResults(cancellationToken));
     }
@@ -112,26 +111,26 @@ public sealed class EstablishmentsController : ControllerBase
             await _getEstablishmentsUseCase
                 .HandleRequestAsync(cancellationToken);
 
-        if (!result.SuccessfulRequest){
+        if (!result.SuccessfulRequest)
+        {
             return Problem(
                 detail: result.ErrorMessage ?? "Unknown error",
                 statusCode: StatusCodes.Status500InternalServerError);
         }
 
-        if (!result.HasValidModel()){
+        if (!result.HasValidModel())
+        {
             return Problem(
                 detail: "Use case returned no establishment data.",
                 statusCode: StatusCodes.Status500InternalServerError);
         }
 
-        // Delegate the entire CSV streaming workflow to the response builder.
-        return await
-            _csvResponseBuilder.WriteCsvAsync(
-                Response,
-                rows: result.Model!,
-                headerColumns: _modelToCsvMapper.Headers,
-                rowSelector: row => _modelToCsvMapper.Map(row),
-                fileName: "establishments.csv",
-                cancellationToken);
+        return await _csvResponseBuilder.WriteCsvAsync(
+            Response,
+            rows: result.Model!,
+            headerColumns: _modelToCsvMapper.Headers,
+            rowSelector: row => _modelToCsvMapper.Map(row),
+            fileName: "establishments.csv",
+            cancellationToken);
     }
 }

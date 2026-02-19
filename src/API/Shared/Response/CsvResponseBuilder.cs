@@ -41,7 +41,8 @@ public class CsvResponseBuilder : ICsvResponseBuilder
     /// <param name="rows">The collection of rows to output.</param>
     /// <param name="headerColumns">The CSV header column names.</param>
     /// <param name="rowSelector">
-    /// A function that maps a row model to an array of string fields representing one CSV row.
+    /// A function that maps a row model to one or more arrays of string fields
+    /// representing CSV rows.
     /// </param>
     /// <param name="fileName">The filename to present to the client when downloading.</param>
     /// <param name="cancellationToken">A cancellation token for cooperative cancellation.</param>
@@ -50,7 +51,7 @@ public class CsvResponseBuilder : ICsvResponseBuilder
         HttpResponse response,
         IEnumerable<TRowType> rows,
         IEnumerable<string> headerColumns,
-        Func<TRowType, string[]> rowSelector,
+        Func<TRowType, IEnumerable<string[]>> rowSelector,
         string fileName,
         CancellationToken cancellationToken)
     {
@@ -66,15 +67,17 @@ public class CsvResponseBuilder : ICsvResponseBuilder
             string headerLine = string.Join(Delimiter, headerColumns);
             await writer.WriteLineAsync(headerLine);
 
-            // Write each data row.
+            // Write each data row (may be multiple rows per model)
             foreach (TRowType row in rows)
             {
                 cancellationToken.ThrowIfCancellationRequested();
 
-                string[] fields = rowSelector(row);
-                string line = BuildLine(fields);
+                foreach (string[] fields in rowSelector(row))
+                {
+                    string line = BuildLine(fields);
+                    await writer.WriteLineAsync(line);
+                }
 
-                await writer.WriteLineAsync(line);
                 await writer.FlushAsync(cancellationToken);
             }
         }
@@ -120,13 +123,9 @@ public class CsvResponseBuilder : ICsvResponseBuilder
         string escaped =
             value.Replace(Quote.ToString(), $"{Quote}{Quote}");
 
-        if (escaped.Contains(Delimiter) ||
+        return (escaped.Contains(Delimiter) ||
             escaped.Contains(Quote) ||
-            escaped.Contains('\n'))
-        {
-            return $"{Quote}{escaped}{Quote}";
-        }
-
-        return escaped;
+            escaped.Contains('\n')) ?
+                $"{Quote}{escaped}{Quote}" : escaped;
     }
 }

@@ -22,7 +22,7 @@ public sealed class EstablishmentGroupsController : ControllerBase
     private readonly IMapper<
         EstablishmentGroup, EstablishmentGroupViewModel> _modelToViewModelMapper;
     private readonly ICsvResponseBuilder _csvResponseBuilder;
-    private readonly ModelToCsvMapper<EstablishmentGroup> _modelToCsvMapper;
+    private readonly ICsvMapper<EstablishmentGroup> _modelToCsvMapper;
 
     public EstablishmentGroupsController(
         IUseCaseResponseOnly<
@@ -31,17 +31,14 @@ public sealed class EstablishmentGroupsController : ControllerBase
             GetEstablishmentGroupByUidRequest,
             UseCaseResponse<EstablishmentGroup>> getEstablishmentGroupByUid,
         ICsvResponseBuilder csvResponseBuilder,
-        IMapper<
-            EstablishmentGroup, EstablishmentGroupViewModel> modelToViewModelMapper,
-        IMapper<EstablishmentGroup, string[]> modelToCsvMapper)
+        IMapper<EstablishmentGroup, EstablishmentGroupViewModel> modelToViewModelMapper,
+        ICsvMapper<EstablishmentGroup> modelToCsvMapper)
     {
         _getEstablishmentGroupsUseCase = getEstablishmentGroupsUseCase;
         _getEstablishmentGroupByUid = getEstablishmentGroupByUid;
         _modelToViewModelMapper = modelToViewModelMapper;
         _csvResponseBuilder = csvResponseBuilder;
-        _modelToCsvMapper =
-           modelToCsvMapper as ModelToCsvMapper<EstablishmentGroup>
-           ?? throw new InvalidOperationException("Expected ModelToCsvMapper instance.");
+        _modelToCsvMapper = modelToCsvMapper;
     }
 
     [HttpGet("{uid:int}", Name = "GetEstablishmentGroupByUid")]
@@ -92,18 +89,17 @@ public sealed class EstablishmentGroupsController : ControllerBase
                 statusCode: StatusCodes.Status404NotFound);
         }
 
-        #pragma warning disable CS1998
+#pragma warning disable CS1998
         async IAsyncEnumerable<EstablishmentGroupViewModel> StreamResults(
             [EnumeratorCancellation] CancellationToken ct = default)
         {
             foreach (EstablishmentGroup group in result.Model!)
             {
                 ct.ThrowIfCancellationRequested();
-
                 yield return _modelToViewModelMapper.Map(group);
             }
         }
-        #pragma warning restore CS1998
+#pragma warning restore CS1998
 
         return Ok(StreamResults(cancellationToken));
     }
@@ -129,14 +125,12 @@ public sealed class EstablishmentGroupsController : ControllerBase
                 statusCode: StatusCodes.Status500InternalServerError);
         }
 
-        // Delegate the entire CSV streaming workflow to the response builder.
-        return await
-            _csvResponseBuilder.WriteCsvAsync(
-                Response,
-                rows: result.Model!,
-                headerColumns: _modelToCsvMapper.Headers,
-                rowSelector: row => _modelToCsvMapper.Map(row),
-                fileName: "establishmentGroups.csv",
-                cancellationToken);
+        return await _csvResponseBuilder.WriteCsvAsync(
+            Response,
+            rows: result.Model!,
+            headerColumns: _modelToCsvMapper.Headers,
+            rowSelector: group => _modelToCsvMapper.Map(group),
+            fileName: "establishmentGroups.csv",
+            cancellationToken);
     }
 }

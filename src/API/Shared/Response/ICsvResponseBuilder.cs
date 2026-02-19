@@ -17,15 +17,15 @@ public interface ICsvResponseBuilder
     /// </param>
     /// <param name="rows">
     /// The collection of data rows to be written to the CSV output.
-    /// Each item is transformed into a CSV row using <paramref name="rowSelector"/>.
+    /// Each item may produce one or more CSV rows via <paramref name="rowSelector"/>.
     /// </param>
     /// <param name="headerColumns">
     /// The column names to write as the first row of the CSV file.
     /// These appear in the order provided.
     /// </param>
     /// <param name="rowSelector">
-    /// A function that maps a row object of type <typeparamref name="T"/> into
-    /// an ordered array of string fields representing a single CSV row.
+    /// A function that maps a row object of type <typeparamref name="TRowType"/> into
+    /// one or more ordered arrays of string fields representing CSV rows.
     /// </param>
     /// <param name="fileName">
     /// The filename presented to the client when downloading the CSV file.
@@ -38,11 +38,11 @@ public interface ICsvResponseBuilder
     /// An <see cref="IActionResult"/> indicating that the CSV response has been written.
     /// Typically returns an <see cref="EmptyResult"/>.
     /// </returns>
-    Task<IActionResult> WriteCsvAsync<T>(
+    Task<IActionResult> WriteCsvAsync<TRowType>(
         HttpResponse response,
-        IEnumerable<T> rows,
+        IEnumerable<TRowType> rows,
         IEnumerable<string> headerColumns,
-        Func<T, string[]> rowSelector,
+        Func<TRowType, IEnumerable<string[]>> rowSelector,
         string fileName,
         CancellationToken cancellationToken);
 }
