@@ -1,5 +1,7 @@
 ﻿using DfE.CleanArchitecture.Common.CrossCutting.Mapper;
 using DfE.GetInformationAboutSchools.Prototyping.API.EstablishmentGroups.ViewModels;
+using DfE.GetInformationAboutSchools.Prototyping.API.Shared.Response;
+using DfE.GetInformationAboutSchools.Prototyping.API.Shared.Response.Mappers;
 using DfE.GetInformationAboutSchools.Prototyping.Core.EstablishmentGroups.Application.Model;
 using DfE.GetInformationAboutSchools.Prototyping.Core.EstablishmentGroups.Application.Usecases.GetEstablishment;
 using DfE.GetInformationAboutSchools.Prototyping.Core.Shared.Application.Usecases;
@@ -13,25 +15,33 @@ namespace DfE.GetInformationAboutSchools.Prototyping.API.EstablishmentGroups.Get
 public sealed class EstablishmentGroupsController : ControllerBase
 {
     private readonly IUseCaseResponseOnly<
-        UseCaseResponse<IReadOnlyCollection<EstablishmentGroup>>> _getGroupsUseCase;
+        UseCaseResponse<IReadOnlyCollection<EstablishmentGroup>>> _getEstablishmentGroupsUseCase;
     private readonly IUseCase<
         GetEstablishmentGroupByUidRequest,
         UseCaseResponse<EstablishmentGroup>> _getEstablishmentGroupByUid;
     private readonly IMapper<
         EstablishmentGroup, EstablishmentGroupViewModel> _modelToViewModelMapper;
+    private readonly ICsvResponseBuilder _csvResponseBuilder;
+    private readonly ModelToCsvMapper<EstablishmentGroup> _modelToCsvMapper;
 
     public EstablishmentGroupsController(
         IUseCaseResponseOnly<
-            UseCaseResponse<IReadOnlyCollection<EstablishmentGroup>>> getGroupsUseCase,
+            UseCaseResponse<IReadOnlyCollection<EstablishmentGroup>>> getEstablishmentGroupsUseCase,
         IUseCase<
             GetEstablishmentGroupByUidRequest,
             UseCaseResponse<EstablishmentGroup>> getEstablishmentGroupByUid,
+        ICsvResponseBuilder csvResponseBuilder,
         IMapper<
-            EstablishmentGroup, EstablishmentGroupViewModel> modelToViewModelMapper)
+            EstablishmentGroup, EstablishmentGroupViewModel> modelToViewModelMapper,
+        IMapper<EstablishmentGroup, string[]> modelToCsvMapper)
     {
-        _getGroupsUseCase = getGroupsUseCase;
+        _getEstablishmentGroupsUseCase = getEstablishmentGroupsUseCase;
         _getEstablishmentGroupByUid = getEstablishmentGroupByUid;
         _modelToViewModelMapper = modelToViewModelMapper;
+        _csvResponseBuilder = csvResponseBuilder;
+        _modelToCsvMapper =
+           modelToCsvMapper as ModelToCsvMapper<EstablishmentGroup>
+           ?? throw new InvalidOperationException("Expected ModelToCsvMapper instance.");
     }
 
     [HttpGet("{uid:int}", Name = "GetEstablishmentGroupByUid")]
@@ -52,7 +62,7 @@ public sealed class EstablishmentGroupsController : ControllerBase
 
         if (!result.HasValidModel())
         {
-            return NotFound($"No establishment found for UID {uid}.");
+            return NotFound($"No establishment group found for UID {uid}.");
         }
 
         EstablishmentGroupViewModel viewModel =
@@ -65,7 +75,7 @@ public sealed class EstablishmentGroupsController : ControllerBase
     public async Task<IActionResult> Get(CancellationToken cancellationToken = default)
     {
         UseCaseResponse<IReadOnlyCollection<EstablishmentGroup>> result =
-            await _getGroupsUseCase
+            await _getEstablishmentGroupsUseCase
                 .HandleRequestAsync(cancellationToken);
 
         if (!result.SuccessfulRequest)
@@ -78,7 +88,7 @@ public sealed class EstablishmentGroupsController : ControllerBase
         if (!result.HasValidModel())
         {
             return Problem(
-                detail: "Use case returned no group data.",
+                detail: "Use case returned no establishment group data.",
                 statusCode: StatusCodes.Status404NotFound);
         }
 
@@ -96,5 +106,37 @@ public sealed class EstablishmentGroupsController : ControllerBase
         #pragma warning restore CS1998
 
         return Ok(StreamResults(cancellationToken));
+    }
+
+    [HttpGet("csv", Name = "GetEstablishmentGroupsCsv")]
+    public async Task<IActionResult> GetCsv(CancellationToken cancellationToken)
+    {
+        UseCaseResponse<IReadOnlyCollection<EstablishmentGroup>> result =
+            await _getEstablishmentGroupsUseCase
+                .HandleRequestAsync(cancellationToken);
+
+        if (!result.SuccessfulRequest)
+        {
+            return Problem(
+                detail: result.ErrorMessage ?? "Unknown error",
+                statusCode: StatusCodes.Status500InternalServerError);
+        }
+
+        if (!result.HasValidModel())
+        {
+            return Problem(
+                detail: "Use case returned no establishment groups data.",
+                statusCode: StatusCodes.Status500InternalServerError);
+        }
+
+        // Delegate the entire CSV streaming workflow to the response builder.
+        return await
+            _csvResponseBuilder.WriteCsvAsync(
+                Response,
+                rows: result.Model!,
+                headerColumns: _modelToCsvMapper.Headers,
+                rowSelector: row => _modelToCsvMapper.Map(row),
+                fileName: "establishmentGroups.csv",
+                cancellationToken);
     }
 }

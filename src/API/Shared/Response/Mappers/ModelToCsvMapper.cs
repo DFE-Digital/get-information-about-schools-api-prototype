@@ -1,115 +1,129 @@
 ﻿using DfE.CleanArchitecture.Common.CrossCutting.Mapper;
 using DfE.GetInformationAboutSchools.Prototyping.API.Shared.Response.Mappers.Options;
-using DfE.GetInformationAboutSchools.Prototyping.Core.Establishments.Application.Model;
 using Microsoft.Extensions.Options;
+using System.Reflection;
 
 namespace DfE.GetInformationAboutSchools.Prototyping.API.Shared.Response.Mappers;
 
 /// <summary>
-/// Maps a domain <see cref="Establishment"/> instance into a CSV row
-/// using column paths defined in <see cref="CsvMappingOptions"/>.
+/// Maps any domain model into a CSV row using column paths defined in
+/// <see cref="CsvMappingOptions"/>. The correct mapping is selected based on
+/// the model type name (e.g. "Establishment", "EstablishmentGroup").
 /// </summary>
-/// <remarks>
-/// This mapper uses simple reflection to walk property paths such as
-/// <c>"Address.Postcode"</c>. Missing properties or null values are
-/// converted to empty strings to ensure CSV stability.
-/// </remarks>
-public sealed class ModelToCsvMapper : IMapper<Establishment, string[]>
+/// <typeparam name="TModel">The domain model type being mapped.</typeparam>
+public sealed class ModelToCsvMapper<TModel> : IMapper<TModel, string[]>
 {
-    private readonly CsvMappingOptions _csvMappingOptions;
+    private readonly CsvMappingOptions _options;
+    private readonly List<PropertyInfo[]> _propertyChains;
 
-    /// <summary>
-    /// Initializes a new instance of the <see cref="ModelToCsvMapper"/> class.
-    /// </summary>
-    /// <param name="csvMappingOptions">
-    /// The CSV mapping configuration containing column paths and headers.
-    /// </param>
-    /// <exception cref="ArgumentNullException">
-    /// Thrown when <paramref name="csvMappingOptions"/> or its value is null.
-    /// </exception>
-    public ModelToCsvMapper(IOptions<CsvMappingOptions> csvMappingOptions)
+    public ModelToCsvMapper(IOptions<CsvMappingDictionary> allMappings)
     {
-        _csvMappingOptions = csvMappingOptions?.Value
-            ?? throw new ArgumentNullException(nameof(csvMappingOptions));
-
-        if (_csvMappingOptions.Columns is null || _csvMappingOptions.Headers is null){
-            throw new InvalidOperationException(
-                "CSV mapping configuration is missing required fields.");
+        if (allMappings?.Value is null)
+        {
+            throw new ArgumentNullException(nameof(allMappings));
         }
 
-        if (_csvMappingOptions.Columns.Length == 0){
+        string key = typeof(TModel).Name;
+
+        if (!allMappings.Value.TryGetValue(key, out CsvMappingOptions? options))
+        {
             throw new InvalidOperationException(
-                "CSV mapping configuration contains no column definitions.");
+                $"No CSV mapping configuration found for model type '{key}'. " +
+                $"Ensure you have a CsvMappings:{key} section in configuration.");
         }
+
+        _options = options;
+
+        if (_options.Columns is null || _options.Headers is null)
+        {
+            throw new InvalidOperationException(
+                $"CSV mapping for '{key}' is missing Columns or Headers.");
+        }
+
+        if (_options.Columns.Length == 0)
+        {
+            throw new InvalidOperationException(
+                $"CSV mapping for '{key}' contains no column definitions.");
+        }
+
+        _propertyChains = BuildPropertyChains(_options.Columns);
     }
 
     /// <summary>
     /// Gets the CSV header row defined in configuration.
     /// </summary>
-    public string[] Headers => _csvMappingOptions.Headers;
+    public string[] Headers => _options.Headers;
 
     /// <summary>
-    /// Maps the supplied <see cref="Establishment"/> into a CSV row.
+    /// Maps the supplied model into a CSV row.
     /// </summary>
-    /// <param name="model">The establishment domain model to map.</param>
-    /// <returns>
-    /// An array of string values representing the CSV row.
-    /// </returns>
-    /// <exception cref="ArgumentNullException">
-    /// Thrown when <paramref name="model"/> is null.
-    /// </exception>
-    public string[] Map(Establishment model)
+    public string[] Map(TModel model)
     {
         ArgumentNullException.ThrowIfNull(model);
 
-        string[] values = new string[_csvMappingOptions.Columns.Length];
+        string[] values = new string[_propertyChains.Count];
 
-        for (int i = 0; i < _csvMappingOptions.Columns.Length; i++)
+        for (int i = 0; i < _propertyChains.Count; i++)
         {
-            string columnPath = _csvMappingOptions.Columns[i];
-            string? value = GetValue(model, columnPath);
-            values[i] = value ?? string.Empty;
+            object? value = ResolveValue(model, _propertyChains[i]);
+            values[i] = value?.ToString() ?? string.Empty;
         }
 
         return values;
     }
 
     /// <summary>
-    /// Walks a dotted property path (e.g. <c>"Address.Postcode"</c>)
-    /// and returns the corresponding value from the supplied object.
+    /// Precomputes the property chains for each dotted path.
     /// </summary>
-    /// <param name="obj">The root object to evaluate.</param>
-    /// <param name="path">The dotted property path.</param>
-    /// <returns>
-    /// The string representation of the resolved value, or <c>null</c>
-    /// if any part of the path cannot be resolved.
-    /// </returns>
-    private static string? GetValue(object? obj, string path)
+    private static List<PropertyInfo[]> BuildPropertyChains(string[] paths)
     {
-        if (obj is null){
-            return null;
-        }
+        List<PropertyInfo[]> chains = new(paths.Length);
 
-        const char PropertySeparator = '.';
-        string[] parts = path.Split(PropertySeparator);
-        object? current = obj;
-
-        foreach (string part in parts)
+        foreach (string path in paths)
         {
-            if (current is null){
-                return null;
+            string[] parts = path.Split('.');
+            Type currentType = typeof(TModel);
+
+            List<PropertyInfo> chain = new();
+
+            foreach (string part in parts)
+            {
+                PropertyInfo? property = currentType.GetProperty(part);
+
+                if (property is null)
+                {
+                    // Invalid path → store empty chain so ResolveValue returns null
+                    chain.Clear();
+                    break;
+                }
+
+                chain.Add(property);
+                currentType = property.PropertyType;
             }
 
-            Type type = current.GetType();
-            System.Reflection.PropertyInfo? property = type.GetProperty(part);
+            chains.Add(chain.ToArray());
+        }
 
-            if (property is null){
+        return chains;
+    }
+
+    /// <summary>
+    /// Walks a precomputed property chain and returns the value.
+    /// </summary>
+    private static object? ResolveValue(object model, PropertyInfo[] chain)
+    {
+        object? current = model;
+
+        foreach (PropertyInfo property in chain)
+        {
+            if (current is null)
+            {
                 return null;
             }
 
             current = property.GetValue(current);
         }
 
-        return current?.ToString();
+        return current;
     }
 }

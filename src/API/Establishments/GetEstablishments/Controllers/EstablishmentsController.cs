@@ -19,9 +19,9 @@ public sealed class EstablishmentsController : ControllerBase
         UseCaseResponse<IReadOnlyCollection<Establishment>>> _getEstablishmentsUseCase;
     private readonly IUseCase<
         GetEstablishmentByUrnRequest, UseCaseResponse<Establishment>> _getEstablishmentUseCase;
-    private readonly ICsvResponseBuilder _csvResponseBuilder;
     private readonly IMapper<Establishment, EstablishmentViewModel> _modelToViewModelMapper;
-    private readonly ModelToCsvMapper _modelToCsvMapper;
+    private readonly ICsvResponseBuilder _csvResponseBuilder;
+    private readonly ModelToCsvMapper<Establishment> _modelToCsvMapper;
 
     public EstablishmentsController(
         ILogger<EstablishmentsController> logger,
@@ -40,7 +40,7 @@ public sealed class EstablishmentsController : ControllerBase
         _modelToViewModelMapper = modelToViewModelMapper;
 
         _modelToCsvMapper =
-            modelToCsvMapper as ModelToCsvMapper
+            modelToCsvMapper as ModelToCsvMapper<Establishment>
             ?? throw new InvalidOperationException("Expected ModelToCsvMapper instance.");
     }
 
