@@ -71,9 +71,6 @@ public static class CompositionRoot
             .AddSingleton<IMapper<
                 IEnumerable<EstablishmentGroupDataTransferObject>,
                 IReadOnlyCollection<EstablishmentGroup>>,
-                    EstablishmentGroupsDtoToModelMapper>()
-            .AddSingleton<IMapper<
-                EstablishmentGroupDataTransferObject, EstablishmentGroup>,
-                    EstablishmentGroupDtoToModelMapper>();
+                    EstablishmentGroupsDtoToModelMapper>();
     }
 }

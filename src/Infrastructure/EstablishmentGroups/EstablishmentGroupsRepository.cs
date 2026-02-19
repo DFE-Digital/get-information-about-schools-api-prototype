@@ -10,14 +10,64 @@ public sealed class EstablishmentGroupsRepository : IEstablishmentGroupsReposito
 {
     private readonly ISqlReader _sqlReader;
     private readonly IMapper<
-        IEnumerable<EstablishmentGroupDataTransferObject>, IReadOnlyCollection<EstablishmentGroup>> _groupsMapper;
+        IEnumerable<EstablishmentGroupDataTransferObject>,
+        IReadOnlyCollection<EstablishmentGroup>> _establishmentGroupsMapper;
 
     public EstablishmentGroupsRepository(
         ISqlReader sqlReader,
-        IMapper<IEnumerable<EstablishmentGroupDataTransferObject>, IReadOnlyCollection<EstablishmentGroup>> groupsMapper)
+        IMapper<
+            IEnumerable<EstablishmentGroupDataTransferObject>,
+            IReadOnlyCollection<EstablishmentGroup>> establishmentGroupsMapper)
     {
         _sqlReader = sqlReader;
-        _groupsMapper = groupsMapper;
+        _establishmentGroupsMapper = establishmentGroupsMapper;
+    }
+
+    public async Task<EstablishmentGroup?> GetEstablishmentGroup(
+        int uid,
+        CancellationToken cancellationToken = default)
+    {
+        const string Sql =
+            """
+            SELECT
+                eg.id AS UID,
+                eg.name AS GroupName,
+                egt.name AS GroupTypeName,
+                gl.urn AS EstablishmentURN,
+                e.EstablishmentName
+            FROM EstablishmentGroup AS eg
+            INNER JOIN GroupLink gl
+                ON eg.id = gl.group_id
+            INNER JOIN Establishment AS e
+                ON e.URN = gl.urn
+            INNER JOIN EstablishmentGroupType AS egt
+                ON eg.type_code = egt.code
+            WHERE eg.id = @UID;
+            """;
+
+        // NOTE: Passing an empty object is a workaround for the SQL framework's requirement
+        // that a parameters object must always be supplied.
+        IEnumerable<EstablishmentGroupDataTransferObject> dtos =
+            await _sqlReader.QueryAsync<EstablishmentGroupDataTransferObject>(
+                Sql,
+                new { UID = uid },
+                cancellationToken);
+
+        IReadOnlyCollection<EstablishmentGroup> groups =
+            _establishmentGroupsMapper.Map(dtos);
+
+        if (groups.Count == 0)
+        {
+            return null; // or throw a domain exception if preferred
+        }
+
+        if (groups.Count > 1)
+        {
+            throw new InvalidOperationException(
+                $"Multiple establishment groups returned for UID {uid}, expected exactly one.");
+        }
+
+        return groups.Single();
     }
 
     public async Task<IReadOnlyCollection<EstablishmentGroup>> GetEstablishmentGroups(
@@ -46,12 +96,8 @@ public sealed class EstablishmentGroupsRepository : IEstablishmentGroupsReposito
                 new { URN = "" },   // This is a bug and needs to be fixed in the sql framework to allow for no parameters to be passed in!
                 cancellationToken);
 
-        var mapped = _groupsMapper.Map(dtos);
+        var mapped = _establishmentGroupsMapper.Map(dtos);
 
         return Array.AsReadOnly([.. mapped]);
     }
 }
-
-
-
-

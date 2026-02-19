@@ -5,55 +5,66 @@ using DfE.GetInformationAboutSchools.Prototyping.Infrastructure.EstablishmentGro
 namespace DfE.GetInformationAboutSchools.Prototyping.Infrastructure.EstablishmentGroups.Mappers;
 
 /// <summary>
-/// Maps a collection of <see cref="EstablishmentGroupDataTransferObject"/> instances
-/// into a collection of <see cref="EstablishmentGroup"/> domain models.
+/// Maps one or more <see cref="EstablishmentGroupDataTransferObject"/> rows into
+/// one or more <see cref="EstablishmentGroup"/> aggregates.
 /// </summary>
+/// <remarks>
+/// The input may contain:
+/// - Multiple rows for a single group (one per linked establishment), or
+/// - Rows for multiple groups mixed together.
+///
+/// Rows are grouped by UID. Each group of rows is mapped into a single
+/// <see cref="EstablishmentGroup"/> containing:
+/// - Group-level metadata (UID, name, type)
+/// - A read-only collection of <see cref="EstablishmentOverview"/> entries.
+/// </remarks>
 public sealed class EstablishmentGroupsDtoToModelMapper :
     IMapper<IEnumerable<EstablishmentGroupDataTransferObject>, IReadOnlyCollection<EstablishmentGroup>>
 {
-    private readonly IMapper<
-        EstablishmentGroupDataTransferObject, EstablishmentGroup> _groupDtoToModelMapper;
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="EstablishmentGroupsDtoToModelMapper"/> class.
-    /// Ensures that a valid single‑item mapper is provided for mapping
-    /// individual <see cref="EstablishmentGroupDataTransferObject"/> instances.
-    /// </summary>
-    /// <param name="groupDtoToModelMapper">
-    /// The mapper responsible for converting a single DTO into a <see cref="EstablishmentGroup"/> domain model.
-    /// </param>
-    /// <exception cref="ArgumentNullException">
-    /// Thrown when <paramref name="groupDtoToModelMapper"/> is null.
-    /// </exception>
-    public EstablishmentGroupsDtoToModelMapper(
-        IMapper<EstablishmentGroupDataTransferObject, EstablishmentGroup> groupDtoToModelMapper)
-    {
-        _groupDtoToModelMapper = groupDtoToModelMapper ??
-            throw new ArgumentNullException(nameof(groupDtoToModelMapper));
-    }
-
-    /// <summary>
-    /// Maps the supplied collection of DTOs into a collection of validated
-    /// <see cref="EstablishmentGroup"/> aggregates.
-    /// </summary>
-    /// <param name="input">The DTO collection to map.</param>
-    /// <returns>A read‑only collection of mapped <see cref="EstablishmentGroup"/> instances.</returns>
-    /// <exception cref="ArgumentNullException">
-    /// Thrown when <paramref name="input"/> is null.
-    /// </exception>
     public IReadOnlyCollection<EstablishmentGroup> Map(
         IEnumerable<EstablishmentGroupDataTransferObject> input)
     {
         ArgumentNullException.ThrowIfNull(input);
 
+        List<EstablishmentGroupDataTransferObject> rows = [.. input];
+
+        if (rows.Count == 0)
+        {
+            return [];
+        }
+
+        // Group rows by UID (each group becomes one EstablishmentGroup aggregate).
+        IEnumerable<IGrouping<int, EstablishmentGroupDataTransferObject>> groupedByUid =
+            rows.GroupBy(row => row.UID);
+
         List<EstablishmentGroup> groups = [];
 
-        foreach (EstablishmentGroupDataTransferObject dto in input)
+        foreach (IGrouping<int, EstablishmentGroupDataTransferObject> groupRows in groupedByUid)
         {
-            EstablishmentGroup mappedGroup =
-                _groupDtoToModelMapper.Map(dto);
+            EstablishmentGroupDataTransferObject first = groupRows.First();
 
-            groups.Add(mappedGroup);
+            EstablishmentGroupIdentifier identifier = new(first.UID);
+
+            EstablishmentGroupDetails details =
+                EstablishmentGroupDetails.Create(
+                    first.GroupName, first.GroupTypeName);
+
+            List<EstablishmentOverview> establishmentList = [];
+
+            foreach (EstablishmentGroupDataTransferObject row in groupRows)
+            {
+                EstablishmentOverview overview =
+                    EstablishmentOverview.Create(
+                        row.EstablishmentUrn, row.EstablishmentName);
+
+                establishmentList.Add(overview);
+            }
+
+            EstablishmentGroup group =
+                EstablishmentGroup.Create(
+                    identifier, details, establishmentList.AsReadOnly());
+
+            groups.Add(group);
         }
 
         return groups.AsReadOnly();

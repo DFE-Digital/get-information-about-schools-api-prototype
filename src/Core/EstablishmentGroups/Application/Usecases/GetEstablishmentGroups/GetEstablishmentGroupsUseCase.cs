@@ -3,7 +3,7 @@ using DfE.GetInformationAboutSchools.Prototyping.Core.Groups.Infrastructure;
 using DfE.GetInformationAboutSchools.Prototyping.Core.Shared.Application.Usecases;
 using Microsoft.Extensions.Logging;
 
-namespace DfE.GetInformationAboutSchools.Prototyping.Core.EstablishmentGroups.Application.Usecases.GetGroups;
+namespace DfE.GetInformationAboutSchools.Prototyping.Core.EstablishmentGroups.Application.Usecases.GetEstablishmentGroups;
 
 public sealed class GetEstablishmentGroupsUseCase :
     IUseCaseResponseOnly<UseCaseResponse<IReadOnlyCollection<EstablishmentGroup>>>
