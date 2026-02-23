@@ -4,6 +4,8 @@ using DfE.GetInformationAboutSchools.Prototyping.Core.Establishments.Infrastruct
 using DfE.GetInformationAboutSchools.Prototyping.Infrastructure.Establishments.Mappers;
 using DfE.GetInformationAboutSchools.Prototyping.Infrastructure.Establishments.Model;
 using DfE.GetInformationAboutSchools.Prototyping.Infrastructure.Shared;
+using DfE.GetInformationAboutSchools.Prototyping.Infrastructure.Shared.DataTransferObjectShaper;
+using DfE.GetInformationAboutSchools.Prototyping.Infrastructure.Shared.DataTransferObjectShaper.Factories;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace DfE.GetInformationAboutSchools.Prototyping.Infrastructure.Establishments;
@@ -68,6 +70,10 @@ public static class CompositionRoot
         return services
             .AddScoped<ISqlReader, SqlReader>()
             .AddScoped<IEstablishmentsRepository, EstablishmentsRepository>()
+            .AddScoped<IDataShaper<EstablishmentDataTransferObject>,
+                DefaultDataShaper<EstablishmentDataTransferObject>>()
+            .AddSingleton<ICollectionFactory, CollectionFactory>()
+            .AddSingleton<ITypeFactory, TypeFactory>()
             .AddSingleton<IMapper<
                 IEnumerable<EstablishmentDataTransferObject>,
                 IReadOnlyCollection<Establishment>>,

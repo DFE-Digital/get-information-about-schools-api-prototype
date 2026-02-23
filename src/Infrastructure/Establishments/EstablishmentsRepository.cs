@@ -3,6 +3,7 @@ using DfE.GetInformationAboutSchools.Prototyping.Core.Establishments.Application
 using DfE.GetInformationAboutSchools.Prototyping.Core.Establishments.Infrastructure;
 using DfE.GetInformationAboutSchools.Prototyping.Infrastructure.Establishments.Model;
 using DfE.GetInformationAboutSchools.Prototyping.Infrastructure.Shared;
+using DfE.GetInformationAboutSchools.Prototyping.Infrastructure.Shared.DataTransferObjectShaper;
 
 namespace DfE.GetInformationAboutSchools.Prototyping.Infrastructure.Establishments;
 
@@ -14,34 +15,30 @@ namespace DfE.GetInformationAboutSchools.Prototyping.Infrastructure.Establishmen
 public sealed class EstablishmentsRepository : IEstablishmentsRepository
 {
     private readonly ISqlReader _sqlReader;
-    private readonly IMapper<EstablishmentDataTransferObject, Establishment> _establishmentMapper;
-    private readonly IMapper<IEnumerable<EstablishmentDataTransferObject>, IReadOnlyCollection<Establishment>> _establishmentsMapper;
+    private readonly IDataShaper<EstablishmentDataTransferObject> _dataShaper;
+    private readonly IMapper<
+        EstablishmentDataTransferObject, Establishment> _establishmentMapper;
+    private readonly IMapper<
+        IEnumerable<EstablishmentDataTransferObject>,
+        IReadOnlyCollection<Establishment>> _establishmentsMapper;
 
-    /// <summary>
-    /// Initializes a new instance of the <see cref="EstablishmentsRepository"/> class.
-    /// </summary>
-    /// <param name="sqlReader">Provides read‑only SQL query execution.</param>
-    /// <param name="establishmentMapper">Maps a single DTO into a domain <see cref="Establishment"/>.</param>
-    /// <param name="establishmentsMapper">Maps a collection of DTOs into domain <see cref="Establishment"/> objects.</param>
     public EstablishmentsRepository(
         ISqlReader sqlReader,
-        IMapper<EstablishmentDataTransferObject, Establishment> establishmentMapper,
-        IMapper<IEnumerable<EstablishmentDataTransferObject>, IReadOnlyCollection<Establishment>> establishmentsMapper)
+        IDataShaper<EstablishmentDataTransferObject> dataShaper,
+        IMapper<
+            EstablishmentDataTransferObject, Establishment> establishmentMapper,
+        IMapper<
+            IEnumerable<EstablishmentDataTransferObject>,
+            IReadOnlyCollection<Establishment>> establishmentsMapper)
     {
         _sqlReader = sqlReader;
+        _dataShaper = dataShaper;
         _establishmentMapper = establishmentMapper;
         _establishmentsMapper = establishmentsMapper;
     }
 
-    /// <summary>
-    /// Retrieves a single establishment identified by its URN.
-    /// </summary>
-    /// <param name="urn">The unique reference number of the establishment to retrieve.</param>
-    /// <param name="cancellationToken">A token that may be used to cancel the operation.</param>
-    /// <returns>
-    /// A fully constructed <see cref="Establishment"/> instance representing the requested establishment.
-    /// </returns>
-    public async Task<Establishment> GetEstablishment(int urn, CancellationToken cancellationToken = default)
+    public async Task<Establishment> GetEstablishment(
+        int urn, CancellationToken cancellationToken = default)
     {
         const string Sql =
             """
@@ -115,8 +112,12 @@ public sealed class EstablishmentsRepository : IEstablishmentsRepository
                 new { URN = "" },   // This is a bug and needs to be fixed in the sql framework to allow for no parameters to be passed in!
                 cancellationToken);
 
-        var mapped = _establishmentsMapper.Map(dtos);
+        string? fields = "URN, EstablishmentName, SchoolWebsite, TelephoneNum, EstablishmentType, EducationPhase, Street, Town, Postcode, EstablishmentStatus"; // TODO: this needs to come from a request params obejct.
 
-        return Array.AsReadOnly([.. mapped]);
+        IEnumerable<EstablishmentDataTransferObject> shapedDtos =
+            await _dataShaper.ShapeDataAsync(dtos, fields);
+
+
+        return _establishmentsMapper.Map(shapedDtos);
     }
 }
