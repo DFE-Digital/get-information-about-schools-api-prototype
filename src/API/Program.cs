@@ -3,7 +3,8 @@ using DfE.CleanArchitecture.Common.CrossCutting.Mapper;
 using DfE.GetInformationAboutSchools.Prototyping.API.EstablishmentGroups.Mappers;
 using DfE.GetInformationAboutSchools.Prototyping.API.EstablishmentGroups.ViewModels;
 using DfE.GetInformationAboutSchools.Prototyping.API.Establishments.Mappers;
-using DfE.GetInformationAboutSchools.Prototyping.API.Establishments.ViewModels;
+using DfE.GetInformationAboutSchools.Prototyping.API.Shared.DynamicViewModelConverters;
+using DfE.GetInformationAboutSchools.Prototyping.API.Shared.DynamicViewModelConverters.ConversionRules;
 using DfE.GetInformationAboutSchools.Prototyping.API.Shared.Response;
 using DfE.GetInformationAboutSchools.Prototyping.API.Shared.Response.Mappers;
 using DfE.GetInformationAboutSchools.Prototyping.API.Shared.Response.Mappers.Options;
@@ -12,10 +13,10 @@ using DfE.GetInformationAboutSchools.Prototyping.Core.Establishments;
 using DfE.GetInformationAboutSchools.Prototyping.Core.Establishments.Application.Model;
 using DfE.GetInformationAboutSchools.Prototyping.Core.Establishments.ValidationServices;
 using DfE.GetInformationAboutSchools.Prototyping.Core.Groups;
+using DfE.GetInformationAboutSchools.Prototyping.Infrastructure.EstablishmentGroups;
 using DfE.GetInformationAboutSchools.Prototyping.Infrastructure.Establishments;
 using DfE.GetInformationAboutSchools.Prototyping.Infrastructure.Establishments.Mappers;
 using DfE.GetInformationAboutSchools.Prototyping.Infrastructure.Establishments.Model;
-using DfE.GetInformationAboutSchools.Prototyping.Infrastructure.EstablishmentGroups;
 using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.Data.SqlClient;
 using System.Text.Json;
@@ -32,8 +33,7 @@ builder.Services.AddEstablishmentInfrastructureDependencies();
 builder.Services.AddGroupInfrastructureDependencies();
 builder.Services.AddGroupUseCaseDependencies();
 builder.Services.AddSingleton<ICsvResponseBuilder, CsvResponseBuilder>();
-builder.Services.AddSingleton<IMapper<
-    Establishment, EstablishmentViewModel>, EstablishmentModelToViewModelMapper>();
+builder.Services.AddSingleton<IMapper<Establishment, object?>, EstablishmentModelToViewModelMapper>();
 builder.Services.AddSingleton<IMapper<
     EstablishmentDataTransferObject, Establishment>, EstablishmentDtoToModelMapper>();
 builder.Services.Configure<CsvMappingDictionary>(
@@ -47,6 +47,14 @@ builder.Services.AddSingleton<
 builder.Services
     .Configure<ValidationPatterns>(
         builder.Configuration.GetSection("ValidationPatterns"));
+
+builder.Services.AddSingleton<IDynamicConversionRule, UndefinedStringConversionRule>();
+builder.Services.AddSingleton<IDynamicConversionRule, StringConversionRule>();
+builder.Services.AddSingleton<IDynamicConversionRule, ValueTypeConversionRule>();
+builder.Services.AddSingleton<IDynamicConversionRule, DictionaryConversionRule>();
+builder.Services.AddSingleton<IDynamicConversionRule, EnumerableConversionRule>();
+builder.Services.AddSingleton<IDynamicConversionRule, ObjectConversionRule>();
+builder.Services.AddSingleton<DynamicViewModelConverter>();
 
 // SQL Server connection string
 var sqlServerConnectionString = builder.Configuration.GetConnectionString("Edubase");
@@ -68,8 +76,8 @@ builder.Services.ConfigureHttpJsonOptions(options =>
 {
     options.SerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
     options.SerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
-    options.SerializerOptions.WriteIndented = false; // important
-    options.SerializerOptions.MaxDepth = 0; // unlimited
+    options.SerializerOptions.WriteIndented = false;
+    options.SerializerOptions.MaxDepth = 0;
 });
 
 var app = builder.Build();

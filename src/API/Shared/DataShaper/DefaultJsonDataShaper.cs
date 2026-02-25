@@ -104,8 +104,10 @@ public class DefaultJsonDataShaper<TDataObject> : IDataShaper<TDataObject>
         if (string.IsNullOrWhiteSpace(fields))
             return new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
+        const char FieldSeparator = ',';
+
         return fields
-            .Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries)
+            .Split(FieldSeparator, StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries)
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
     }
 

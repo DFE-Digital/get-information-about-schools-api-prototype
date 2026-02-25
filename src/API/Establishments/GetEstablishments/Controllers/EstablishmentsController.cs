@@ -1,5 +1,4 @@
 using DfE.CleanArchitecture.Common.CrossCutting.Mapper;
-using DfE.GetInformationAboutSchools.Prototyping.API.Establishments.ViewModels;
 using DfE.GetInformationAboutSchools.Prototyping.API.Shared.Response;
 using DfE.GetInformationAboutSchools.Prototyping.API.Shared.Response.Mappers;
 using DfE.GetInformationAboutSchools.Prototyping.Core.Establishments.Application.Model;
@@ -19,7 +18,7 @@ public sealed class EstablishmentsController : ControllerBase
         UseCaseResponse<IReadOnlyCollection<Establishment>>> _getEstablishmentsUseCase;
     private readonly IUseCase<
         GetEstablishmentByUrnRequest, UseCaseResponse<Establishment>> _getEstablishmentUseCase;
-    private readonly IMapper<Establishment, EstablishmentViewModel> _modelToViewModelMapper;
+    private readonly IMapper<Establishment, object?> _modelToViewModelMapper;
     private readonly ICsvResponseBuilder _csvResponseBuilder;
     private readonly ICsvMapper<Establishment> _modelToCsvMapper;
 
@@ -30,7 +29,7 @@ public sealed class EstablishmentsController : ControllerBase
         IUseCase<
              GetEstablishmentByUrnRequest, UseCaseResponse<Establishment>> getEstablishmentUseCase,
         ICsvResponseBuilder csvResponseBuilder,
-        IMapper<Establishment, EstablishmentViewModel> modelToViewModelMapper,
+        IMapper<Establishment, object?> modelToViewModelMapper,
         ICsvMapper<Establishment> modelToCsvMapper)
     {
         _logger = logger;
@@ -61,7 +60,7 @@ public sealed class EstablishmentsController : ControllerBase
             return NotFound($"No establishment found for URN {urn}.");
         }
 
-        EstablishmentViewModel viewModel =
+        object? viewModel =
             _modelToViewModelMapper.Map(result.Model!);
 
         return Ok(viewModel);
@@ -89,7 +88,7 @@ public sealed class EstablishmentsController : ControllerBase
         }
 
 #pragma warning disable CS1998
-        async IAsyncEnumerable<EstablishmentViewModel> StreamResults(
+        async IAsyncEnumerable<object?> StreamResults(
             [EnumeratorCancellation] CancellationToken ct = default)
         {
             foreach (Establishment establishment in result.Model!)

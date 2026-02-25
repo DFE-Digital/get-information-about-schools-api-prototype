@@ -112,7 +112,7 @@ public sealed class EstablishmentsRepository : IEstablishmentsRepository
                 new { URN = "" },   // This is a bug and needs to be fixed in the sql framework to allow for no parameters to be passed in!
                 cancellationToken);
 
-        string? fields = "URN, EstablishmentName, SchoolWebsite, TelephoneNum, EstablishmentType, EducationPhase, Street, Town, Postcode, EstablishmentStatus"; // TODO: this needs to come from a request params obejct.
+        string? fields = "URN, EstablishmentName"; // TODO: this needs to come from a request params obejct.
 
         IEnumerable<EstablishmentDataTransferObject> shapedDtos =
             await _dataShaper.ShapeDataAsync(dtos, fields);
