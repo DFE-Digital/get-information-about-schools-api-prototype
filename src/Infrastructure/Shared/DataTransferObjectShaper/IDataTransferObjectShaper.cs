@@ -8,7 +8,7 @@
 /// <typeparam name="TDataObject">
 /// The source type being shaped.
 /// </typeparam>
-public interface IDataShaper<TDataObject>
+public interface IDataTransferObjectShaper<TDataObject>
 {
     /// <summary>
     /// Shapes a collection of objects by selecting only the specified fields.

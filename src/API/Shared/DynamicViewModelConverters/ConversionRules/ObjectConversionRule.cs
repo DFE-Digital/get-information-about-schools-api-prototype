@@ -48,7 +48,9 @@ public sealed class ObjectConversionRule : IDynamicConversionRule
         IDictionary<string, object?> expando = new ExpandoObject();
         Type type = input.GetType();
 
-        foreach (PropertyInfo prop in type.GetProperties(BindingFlags.Public | BindingFlags.Instance))
+        foreach (PropertyInfo prop in type.GetProperties(
+                    BindingFlags.Public |
+                    BindingFlags.Instance))
         {
             object? value = prop.GetValue(input);
             object? cleaned = recurse(value);

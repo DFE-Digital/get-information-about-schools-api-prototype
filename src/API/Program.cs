@@ -15,6 +15,7 @@ using DfE.GetInformationAboutSchools.Prototyping.Core.Establishments.ValidationS
 using DfE.GetInformationAboutSchools.Prototyping.Core.Groups;
 using DfE.GetInformationAboutSchools.Prototyping.Infrastructure.EstablishmentGroups;
 using DfE.GetInformationAboutSchools.Prototyping.Infrastructure.Establishments;
+using DfE.GetInformationAboutSchools.Prototyping.Infrastructure;
 using DfE.GetInformationAboutSchools.Prototyping.Infrastructure.Establishments.Mappers;
 using DfE.GetInformationAboutSchools.Prototyping.Infrastructure.Establishments.Model;
 using Microsoft.AspNetCore.ResponseCompression;
@@ -29,8 +30,7 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddLogging();
 builder.Services.AddEstablishmentUseCaseDependencies();
-builder.Services.AddEstablishmentInfrastructureDependencies();
-builder.Services.AddGroupInfrastructureDependencies();
+builder.Services.AddInfrastructureDependencies();
 builder.Services.AddGroupUseCaseDependencies();
 builder.Services.AddSingleton<ICsvResponseBuilder, CsvResponseBuilder>();
 builder.Services.AddSingleton<IMapper<Establishment, object?>, EstablishmentModelToViewModelMapper>();

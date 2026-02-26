@@ -15,7 +15,7 @@ namespace DfE.GetInformationAboutSchools.Prototyping.Infrastructure.Establishmen
 public sealed class EstablishmentsRepository : IEstablishmentsRepository
 {
     private readonly ISqlReader _sqlReader;
-    private readonly IDataShaper<EstablishmentDataTransferObject> _dataShaper;
+    private readonly IDataTransferObjectShaper<EstablishmentDataTransferObject> _dataShaper;
     private readonly IMapper<
         EstablishmentDataTransferObject, Establishment> _establishmentMapper;
     private readonly IMapper<
@@ -24,7 +24,7 @@ public sealed class EstablishmentsRepository : IEstablishmentsRepository
 
     public EstablishmentsRepository(
         ISqlReader sqlReader,
-        IDataShaper<EstablishmentDataTransferObject> dataShaper,
+        IDataTransferObjectShaper<EstablishmentDataTransferObject> dataShaper,
         IMapper<
             EstablishmentDataTransferObject, Establishment> establishmentMapper,
         IMapper<
