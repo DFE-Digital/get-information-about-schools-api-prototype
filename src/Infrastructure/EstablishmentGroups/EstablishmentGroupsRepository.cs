@@ -3,23 +3,29 @@ using DfE.GetInformationAboutSchools.Prototyping.Core.EstablishmentGroups.Applic
 using DfE.GetInformationAboutSchools.Prototyping.Core.Groups.Infrastructure;
 using DfE.GetInformationAboutSchools.Prototyping.Infrastructure.EstablishmentGroups.DataTransferObjects;
 using DfE.GetInformationAboutSchools.Prototyping.Infrastructure.Shared;
+using DfE.GetInformationAboutSchools.Prototyping.Infrastructure.Shared.DataTransferObjectShaper;
 
 namespace DfE.GetInformationAboutSchools.Prototyping.Infrastructure.EstablishmentGroups;
 
 public sealed class EstablishmentGroupsRepository : IEstablishmentGroupsRepository
 {
     private readonly ISqlReader _sqlReader;
+    private readonly IDataTransferObjectShaper<
+        EstablishmentGroupDataTransferObject> _dataShaper;
     private readonly IMapper<
         IEnumerable<EstablishmentGroupDataTransferObject>,
         IReadOnlyCollection<EstablishmentGroup>> _establishmentGroupsMapper;
 
     public EstablishmentGroupsRepository(
         ISqlReader sqlReader,
+        IDataTransferObjectShaper<
+            EstablishmentGroupDataTransferObject> dataShaper,
         IMapper<
             IEnumerable<EstablishmentGroupDataTransferObject>,
             IReadOnlyCollection<EstablishmentGroup>> establishmentGroupsMapper)
     {
         _sqlReader = sqlReader;
+        _dataShaper = dataShaper;
         _establishmentGroupsMapper = establishmentGroupsMapper;
     }
 
@@ -71,6 +77,7 @@ public sealed class EstablishmentGroupsRepository : IEstablishmentGroupsReposito
     }
 
     public async Task<IReadOnlyCollection<EstablishmentGroup>> GetEstablishmentGroups(
+        HashSet<string> requiredFields,
         CancellationToken cancellationToken = default)
     {
         const string Sql =
@@ -96,8 +103,9 @@ public sealed class EstablishmentGroupsRepository : IEstablishmentGroupsReposito
                 new { URN = "" },   // This is a bug and needs to be fixed in the sql framework to allow for no parameters to be passed in!
                 cancellationToken);
 
-        var mapped = _establishmentGroupsMapper.Map(dtos);
+        IEnumerable<EstablishmentGroupDataTransferObject> shapedDtos =
+            await _dataShaper.ShapeDataAsync(dtos, requiredFields);
 
-        return Array.AsReadOnly([.. mapped]);
+        return _establishmentGroupsMapper.Map(shapedDtos);
     }
 }

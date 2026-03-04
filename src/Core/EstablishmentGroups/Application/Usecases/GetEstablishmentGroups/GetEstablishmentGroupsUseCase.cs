@@ -1,4 +1,5 @@
 ﻿using DfE.GetInformationAboutSchools.Prototyping.Core.EstablishmentGroups.Application.Model;
+using DfE.GetInformationAboutSchools.Prototyping.Core.EstablishmentGroups.Application.Usecases.GetEstablishments.Request;
 using DfE.GetInformationAboutSchools.Prototyping.Core.Groups.Infrastructure;
 using DfE.GetInformationAboutSchools.Prototyping.Core.Shared.Application.Usecases;
 using Microsoft.Extensions.Logging;
@@ -6,7 +7,9 @@ using Microsoft.Extensions.Logging;
 namespace DfE.GetInformationAboutSchools.Prototyping.Core.EstablishmentGroups.Application.Usecases.GetEstablishmentGroups;
 
 public sealed class GetEstablishmentGroupsUseCase :
-    IUseCaseResponseOnly<UseCaseResponse<IReadOnlyCollection<EstablishmentGroup>>>
+    IUseCase<
+        GetEstablishmentGroupsByRequiredFieldsRequest,
+        UseCaseResponse<IReadOnlyCollection<EstablishmentGroup>>>
 {
     private readonly ILogger<GetEstablishmentGroupsUseCase> _logger;
     private readonly IEstablishmentGroupsRepository _groupsRepository;
@@ -20,6 +23,7 @@ public sealed class GetEstablishmentGroupsUseCase :
     }
 
     public async Task<UseCaseResponse<IReadOnlyCollection<EstablishmentGroup>>> HandleRequestAsync(
+        GetEstablishmentGroupsByRequiredFieldsRequest request,
         CancellationToken cancellationToken = default)
     {
         _logger.LogInformation(
@@ -31,7 +35,8 @@ public sealed class GetEstablishmentGroupsUseCase :
         {
             IReadOnlyCollection<EstablishmentGroup> results =
                 await _groupsRepository
-                    .GetEstablishmentGroups(cancellationToken);
+                    .GetEstablishmentGroups(
+                        [..request.RequiredFields], cancellationToken);
 
             _logger.LogInformation(
                 "{UseCase} successfully retrieved {Count} groups.",

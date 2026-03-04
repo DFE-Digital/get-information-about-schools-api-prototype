@@ -82,6 +82,7 @@ public sealed class EstablishmentsRepository : IEstablishmentsRepository
     /// the establishments stored in the database.
     /// </returns>
     public async Task<IReadOnlyCollection<Establishment>> GetEstablishments(
+        HashSet<string> requiredFields,
         CancellationToken cancellationToken = default)
     {
         const string Sql =
@@ -112,11 +113,8 @@ public sealed class EstablishmentsRepository : IEstablishmentsRepository
                 new { URN = "" },   // This is a bug and needs to be fixed in the sql framework to allow for no parameters to be passed in!
                 cancellationToken);
 
-        string? fields = "URN, EstablishmentName"; // TODO: this needs to come from a request params obejct.
-
         IEnumerable<EstablishmentDataTransferObject> shapedDtos =
-            await _dataShaper.ShapeDataAsync(dtos, fields);
-
+            await _dataShaper.ShapeDataAsync(dtos, requiredFields);
 
         return _establishmentsMapper.Map(shapedDtos);
     }

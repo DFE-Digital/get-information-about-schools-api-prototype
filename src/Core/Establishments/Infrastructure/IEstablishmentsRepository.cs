@@ -25,6 +25,7 @@ public interface IEstablishmentsRepository
     /// or if retrieval fails unexpectedly.
     /// </remarks>
     Task<IReadOnlyCollection<Establishment>> GetEstablishments(
+        HashSet<string> requiredFields,
         CancellationToken cancellationToken = default);
 
     /// <summary>

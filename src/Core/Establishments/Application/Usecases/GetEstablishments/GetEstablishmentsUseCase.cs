@@ -1,4 +1,5 @@
 ﻿using DfE.GetInformationAboutSchools.Prototyping.Core.Establishments.Application.Model;
+using DfE.GetInformationAboutSchools.Prototyping.Core.Establishments.Application.Usecases.GetEstablishments.Request;
 using DfE.GetInformationAboutSchools.Prototyping.Core.Establishments.Infrastructure;
 using DfE.GetInformationAboutSchools.Prototyping.Core.Shared.Application.Usecases;
 using Microsoft.Extensions.Logging;
@@ -6,16 +7,20 @@ using Microsoft.Extensions.Logging;
 namespace DfE.GetInformationAboutSchools.Prototyping.Core.Establishments.Application.Usecases.GetEstablishments;
 
 /// <summary>
-/// Handles the retrieval of all establishments by orchestrating the
-/// <see cref="IEstablishmentsRepository"/> and returning a structured
-/// <see cref="UseCaseResponse{T}"/>.
+/// Executes the retrieval of establishment data using the
+/// <see cref="IEstablishmentsRepository"/> and returns the results
+/// wrapped in a <see cref="UseCaseResponse{T}"/>.
 /// </summary>
 /// <remarks>
-/// This use case does not require an input request object. It logs structured
-/// diagnostic information, including cancellation events and exception details.
+/// This use case accepts a <see cref="GetEstablishmentGroupsByRequiredFieldsRequest"/>,
+/// which specifies the required field names to validate before execution.
+/// Structured logging is used throughout to record execution flow,
+/// cancellation events, and error conditions.
 /// </remarks>
 public sealed class GetEstablishmentsUseCase :
-    IUseCaseResponseOnly<UseCaseResponse<IReadOnlyCollection<Establishment>>>
+    IUseCase<
+        GetEstablishmentsByRequiredFieldsRequest,
+        UseCaseResponse<IReadOnlyCollection<Establishment>>>
 {
     private readonly ILogger<GetEstablishmentsUseCase> _logger;
     private readonly IEstablishmentsRepository _establishmentsRepository;
@@ -24,7 +29,9 @@ public sealed class GetEstablishmentsUseCase :
     /// Initializes a new instance of the <see cref="GetEstablishmentsUseCase"/> class.
     /// </summary>
     /// <param name="logger">The logger used for structured diagnostic logging.</param>
-    /// <param name="establishmentsRepository">The repository used to retrieve establishment data.</param>
+    /// <param name="establishmentsRepository">
+    /// The repository responsible for retrieving establishment data.
+    /// </param>
     public GetEstablishmentsUseCase(
         ILogger<GetEstablishmentsUseCase> logger,
         IEstablishmentsRepository establishmentsRepository)
@@ -34,16 +41,21 @@ public sealed class GetEstablishmentsUseCase :
     }
 
     /// <summary>
-    /// Executes the use case and returns a collection of establishments.
+    /// Handles the request to retrieve establishments and returns the results
+    /// wrapped in a <see cref="UseCaseResponse{T}"/>.
     /// </summary>
+    /// <param name="request">
+    /// The request containing the validated required field names for the operation.
+    /// </param>
     /// <param name="cancellationToken">
     /// A token that may be used to cancel the asynchronous operation.
     /// </param>
     /// <returns>
-    /// A <see cref="UseCaseResponse{T}"/> containing either the retrieved establishments
-    /// or an error message if the operation fails.
+    /// A <see cref="UseCaseResponse{T}"/> containing the retrieved establishments,
+    /// or an error response if the operation fails or is cancelled.
     /// </returns>
     public async Task<UseCaseResponse<IReadOnlyCollection<Establishment>>> HandleRequestAsync(
+        GetEstablishmentsByRequiredFieldsRequest request,
         CancellationToken cancellationToken = default)
     {
         _logger.LogInformation(
@@ -54,8 +66,8 @@ public sealed class GetEstablishmentsUseCase :
         try
         {
             IReadOnlyCollection<Establishment> results =
-                await _establishmentsRepository
-                    .GetEstablishments(cancellationToken);
+                await _establishmentsRepository.GetEstablishments(
+                    [.. request.RequiredFields], cancellationToken);
 
             _logger.LogInformation(
                 "{UseCase} successfully retrieved {Count} establishments.",

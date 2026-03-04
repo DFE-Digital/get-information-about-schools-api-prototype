@@ -4,6 +4,7 @@ using DfE.GetInformationAboutSchools.Prototyping.Core.Establishments.Application
 using DfE.GetInformationAboutSchools.Prototyping.Core.Establishments.Application.Usecases.GetEstablishment;
 using DfE.GetInformationAboutSchools.Prototyping.Core.Establishments.Application.Usecases.GetEstablishment.Request;
 using DfE.GetInformationAboutSchools.Prototyping.Core.Establishments.Application.Usecases.GetEstablishments;
+using DfE.GetInformationAboutSchools.Prototyping.Core.Establishments.Application.Usecases.GetEstablishments.Request;
 using DfE.GetInformationAboutSchools.Prototyping.Core.Establishments.ValidationServices;
 using DfE.GetInformationAboutSchools.Prototyping.Core.Establishments.ValidationServices.EstablishmentAddress;
 using DfE.GetInformationAboutSchools.Prototyping.Core.Establishments.ValidationServices.EstablishmentContactDetails;
@@ -55,10 +56,16 @@ public static class CompositionRoot
         ArgumentNullException.ThrowIfNull(services);
 
         return services
-            .AddScoped<IUseCaseResponseOnly<
-                UseCaseResponse<IReadOnlyCollection<Establishment>>>, GetEstablishmentsUseCase>()
-            .AddScoped<IUseCase<
-                GetEstablishmentByUrnRequest, UseCaseResponse<Establishment>>, GetEstablishmentByUrnUseCase>()
+            .AddScoped<
+                IUseCase<
+                    GetEstablishmentsByRequiredFieldsRequest,
+                    UseCaseResponse<IReadOnlyCollection<Establishment>>>,
+                GetEstablishmentsUseCase>()
+            .AddScoped<
+                IUseCase<
+                    GetEstablishmentByUrnRequest,
+                    UseCaseResponse<Establishment>>,
+                GetEstablishmentByUrnUseCase>()
             .AddSingleton<IRegexValidationService, RegexValidationService>()
             .AddSingleton<IEstablishmentAddressValidator, EstablishmentAddressValidator>()
             .AddSingleton<IEstablishmentContactDetailsValidator, EstablishmentContactDetailsValidator>();

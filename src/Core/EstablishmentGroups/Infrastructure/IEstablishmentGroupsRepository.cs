@@ -18,6 +18,7 @@ public interface IEstablishmentGroupsRepository
     /// A read‑only collection of fully constructed <see cref="EstablishmentGroup"/> domain models.
     /// </returns>
     Task<IReadOnlyCollection<EstablishmentGroup>> GetEstablishmentGroups(
+        HashSet<string> requiredFields,
         CancellationToken cancellationToken = default);
 
     /// <summary>

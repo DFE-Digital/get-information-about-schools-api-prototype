@@ -1,5 +1,7 @@
 ﻿using DfE.CleanArchitecture.Common.CrossCutting.Mapper;
 using DfE.GetInformationAboutSchools.Prototyping.API.EstablishmentGroups.ViewModels;
+using DfE.GetInformationAboutSchools.Prototyping.API.Establishments.ViewModels;
+using DfE.GetInformationAboutSchools.Prototyping.API.Shared.DynamicViewModelConverters;
 using DfE.GetInformationAboutSchools.Prototyping.Core.EstablishmentGroups.Application.Model;
 
 namespace DfE.GetInformationAboutSchools.Prototyping.API.EstablishmentGroups.Mappers;
@@ -9,9 +11,15 @@ namespace DfE.GetInformationAboutSchools.Prototyping.API.EstablishmentGroups.Map
 /// suitable for API responses. This includes mapping the group's identifying
 /// details and its associated establishment summaries.
 /// </summary>
-public class EstablishmentGroupModelToViewModelMapper :
-    IMapper<EstablishmentGroup, EstablishmentGroupViewModel>
+public class EstablishmentGroupModelToViewModelMapper : IMapper<EstablishmentGroup, object?>
 {
+    private readonly DynamicViewModelConverter _converter;
+
+    public EstablishmentGroupModelToViewModelMapper(DynamicViewModelConverter converter)
+    {
+        _converter = converter;
+    }
+
     /// <summary>
     /// Maps the supplied <see cref="EstablishmentGroup"/> domain model into a
     /// <see cref="EstablishmentGroupViewModel"/> instance.
@@ -21,7 +29,7 @@ public class EstablishmentGroupModelToViewModelMapper :
     /// <exception cref="ArgumentNullException">
     /// Thrown when <paramref name="input"/> is null.
     /// </exception>
-    public EstablishmentGroupViewModel Map(EstablishmentGroup input)
+    public object Map(EstablishmentGroup input)
     {
         return input is null ?
             throw new ArgumentNullException(nameof(input)) :
@@ -34,9 +42,9 @@ public class EstablishmentGroupModelToViewModelMapper :
     /// </summary>
     /// <param name="group">The domain group to map.</param>
     /// <returns>A populated <see cref="EstablishmentGroupViewModel"/>.</returns>
-    private EstablishmentGroupViewModel MapGroup(EstablishmentGroup group)
+    private object MapGroup(EstablishmentGroup group)
     {
-        EstablishmentGroupViewModel viewModel = new()
+        EstablishmentGroupViewModel establishmentGroupViewModel = new()
         {
             UID = group.Identifier.UID,
             GroupName = group.BasicDetails.Name,
@@ -44,7 +52,8 @@ public class EstablishmentGroupModelToViewModelMapper :
             Establishments = MapEstablishments(group.GroupEstablishments)
         };
 
-        return viewModel;
+        return _converter.ToDynamic(establishmentGroupViewModel)!;
+
     }
 
     /// <summary>

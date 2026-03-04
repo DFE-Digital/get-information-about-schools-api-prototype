@@ -17,15 +17,17 @@ public interface IDataTransferObjectShaper<TDataObject>
     /// </summary>
     /// <param name="dataObjects">The source objects to shape.</param>
     /// <param name="fields">
-    /// A comma-separated list of field names to include. If null or empty,
-    /// all public properties are included.
+    /// A <see cref="HashSet{T}"/> containing the field names to include in the shaped output.
+    /// If the set is null or contains no values, all public properties of 
+    /// <typeparamref name="TDataObject"/> are included. A hash set is used to enable
+    /// efficient lookups when determining whether a property should be included.
     /// </param>
     /// <returns>
     /// A sequence of shaped <typeparamref name="TDataObject"/> instances.
     /// </returns>
     Task<IEnumerable<TDataObject>> ShapeDataAsync(
         IEnumerable<TDataObject> dataObjects,
-        string? fields);
+        HashSet<string> fields);
 
     /// <summary>
     /// Shapes a single object by selecting only the specified fields.
@@ -34,13 +36,15 @@ public interface IDataTransferObjectShaper<TDataObject>
     /// </summary>
     /// <param name="dataObject">The source object to shape.</param>
     /// <param name="fields">
-    /// A comma-separated list of field names to include. If null or empty,
-    /// all public properties are included.
+    /// A <see cref="HashSet{T}"/> containing the field names to include in the shaped output.
+    /// If the set is null or contains no values, all public properties of 
+    /// <typeparamref name="TDataObject"/> are included. A hash set is used to enable
+    /// efficient, case‑insensitive membership checks during shaping.
     /// </param>
     /// <returns>
     /// A shaped <typeparamref name="TDataObject"/> instance.
     /// </returns>
     Task<TDataObject> ShapeDataAsync(
         TDataObject dataObject,
-        string? fields);
+        HashSet<string> fields);
 }

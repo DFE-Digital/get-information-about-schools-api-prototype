@@ -1,8 +1,10 @@
 using DfE.CleanArchitecture.Common.CrossCutting.Mapper;
+using DfE.GetInformationAboutSchools.Prototyping.API.Shared.ModelBinding.Attributes;
 using DfE.GetInformationAboutSchools.Prototyping.API.Shared.Response;
 using DfE.GetInformationAboutSchools.Prototyping.API.Shared.Response.Mappers;
 using DfE.GetInformationAboutSchools.Prototyping.Core.Establishments.Application.Model;
 using DfE.GetInformationAboutSchools.Prototyping.Core.Establishments.Application.Usecases.GetEstablishment.Request;
+using DfE.GetInformationAboutSchools.Prototyping.Core.Establishments.Application.Usecases.GetEstablishments.Request;
 using DfE.GetInformationAboutSchools.Prototyping.Core.Shared.Application.Usecases;
 using Microsoft.AspNetCore.Mvc;
 using System.Runtime.CompilerServices;
@@ -14,20 +16,24 @@ namespace DfE.GetInformationAboutSchools.Prototyping.API.Establishments.GetEstab
 public sealed class EstablishmentsController : ControllerBase
 {
     private readonly ILogger<EstablishmentsController> _logger;
-    private readonly IUseCaseResponseOnly<
+    private readonly IUseCase<
+        GetEstablishmentsByRequiredFieldsRequest,
         UseCaseResponse<IReadOnlyCollection<Establishment>>> _getEstablishmentsUseCase;
     private readonly IUseCase<
-        GetEstablishmentByUrnRequest, UseCaseResponse<Establishment>> _getEstablishmentUseCase;
+        GetEstablishmentByUrnRequest,
+        UseCaseResponse<Establishment>> _getEstablishmentUseCase;
     private readonly IMapper<Establishment, object?> _modelToViewModelMapper;
     private readonly ICsvResponseBuilder _csvResponseBuilder;
     private readonly ICsvMapper<Establishment> _modelToCsvMapper;
 
     public EstablishmentsController(
         ILogger<EstablishmentsController> logger,
-        IUseCaseResponseOnly<
+        IUseCase<
+            GetEstablishmentsByRequiredFieldsRequest,
             UseCaseResponse<IReadOnlyCollection<Establishment>>> getEstablishmentsUseCase,
         IUseCase<
-             GetEstablishmentByUrnRequest, UseCaseResponse<Establishment>> getEstablishmentUseCase,
+             GetEstablishmentByUrnRequest,
+             UseCaseResponse<Establishment>> getEstablishmentUseCase,
         ICsvResponseBuilder csvResponseBuilder,
         IMapper<Establishment, object?> modelToViewModelMapper,
         ICsvMapper<Establishment> modelToCsvMapper)
@@ -67,11 +73,17 @@ public sealed class EstablishmentsController : ControllerBase
     }
 
     [HttpGet(Name = "GetEstablishments")]
-    public async Task<IActionResult> Get(CancellationToken cancellationToken = default)
+    public async Task<IActionResult> Get(
+        [FromQuery]
+        [RequestWithRequiredFields("Establishments")]
+        GetEstablishmentGroupsRequest requiredEstablishmentFields,
+        CancellationToken cancellationToken = default)
     {
         UseCaseResponse<IReadOnlyCollection<Establishment>> result =
             await _getEstablishmentsUseCase
-                .HandleRequestAsync(cancellationToken);
+                .HandleRequestAsync(
+                    GetEstablishmentsByRequiredFieldsRequest
+                        .Create(requiredEstablishmentFields.Fields), cancellationToken);
 
         if (!result.SuccessfulRequest)
         {
@@ -104,11 +116,15 @@ public sealed class EstablishmentsController : ControllerBase
     }
 
     [HttpGet("csv", Name = "GetEstablishmentsCsv")]
-    public async Task<IActionResult> GetCsv(CancellationToken cancellationToken)
+    public async Task<IActionResult> GetCsv(
+        [FromQuery] string[] requiredFields,
+        CancellationToken cancellationToken)
     {
         UseCaseResponse<IReadOnlyCollection<Establishment>> result =
             await _getEstablishmentsUseCase
-                .HandleRequestAsync(cancellationToken);
+                .HandleRequestAsync(
+                    GetEstablishmentsByRequiredFieldsRequest
+                        .Create(requiredFields), cancellationToken);
 
         if (!result.SuccessfulRequest)
         {

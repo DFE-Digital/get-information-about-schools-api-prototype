@@ -1,6 +1,5 @@
 ﻿using DfE.GetInformationAboutSchools.Prototyping.Core.Establishments.Application.Model;
 using DfE.GetInformationAboutSchools.Prototyping.Core.Establishments.Application.Usecases.GetEstablishment.Request;
-using DfE.GetInformationAboutSchools.Prototyping.Core.Establishments.Application.Usecases.GetEstablishments;
 using DfE.GetInformationAboutSchools.Prototyping.Core.Establishments.Infrastructure;
 using DfE.GetInformationAboutSchools.Prototyping.Core.Shared.Application.Usecases;
 using Microsoft.Extensions.Logging;
@@ -15,13 +14,14 @@ namespace DfE.GetInformationAboutSchools.Prototyping.Core.Establishments.Applica
 /// It logs structured diagnostic information throughout execution, including cancellation
 /// events, domain‑specific exceptions, and unexpected errors.
 /// </remarks>
+/// 
 public sealed class GetEstablishmentByUrnUseCase :
     IUseCase<GetEstablishmentByUrnRequest, UseCaseResponse<Establishment>>
 {
     /// <summary>
     /// The logger used for structured diagnostic logging.
     /// </summary>
-    private readonly ILogger<GetEstablishmentsUseCase> _logger;
+    private readonly ILogger<GetEstablishmentByUrnUseCase> _logger;
 
     /// <summary>
     /// The repository used to retrieve establishment data from the persistence layer.
@@ -38,7 +38,7 @@ public sealed class GetEstablishmentByUrnUseCase :
     /// The repository responsible for retrieving establishment data.
     /// </param>
     public GetEstablishmentByUrnUseCase(
-        ILogger<GetEstablishmentsUseCase> logger,
+        ILogger<GetEstablishmentByUrnUseCase> logger,
         IEstablishmentsRepository establishmentsRepository)
     {
         _logger = logger;

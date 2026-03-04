@@ -44,7 +44,6 @@ public sealed class SqlReader : ISqlReader
         object? parameters,
         CancellationToken cancellationToken) =>
         ExecuteAsync(
-            sql,
             parameters,
             (handler, tx, opts, ct) =>
                 handler.QuerySingleAsync<TResult>(sql, tx, opts, ct),
@@ -63,7 +62,6 @@ public sealed class SqlReader : ISqlReader
         object? parameters,
         CancellationToken cancellationToken) =>
         ExecuteAsync(
-            sql,
             parameters,
             (handler, tx, opts, ct) =>
                 handler.QueryAsync<TResult>(sql, tx, opts, ct),
@@ -73,7 +71,6 @@ public sealed class SqlReader : ISqlReader
     /// Executes a SQL query inside a managed transaction and returns the result.
     /// </summary>
     /// <typeparam name="T">The type returned by the underlying query operation.</typeparam>
-    /// <param name="sql">The SQL query text.</param>
     /// <param name="parameters">The query parameters, or <c>null</c>.</param>
     /// <param name="executor">
     /// A delegate that performs the actual query using the provided
@@ -86,7 +83,6 @@ public sealed class SqlReader : ISqlReader
     /// ensuring consistent behaviour across all SQL read operations.
     /// </remarks>
     private async Task<TResult> ExecuteAsync<TResult>(
-        string sql,
         object? parameters,
         Func<ISqlQueryHandler, DbTransaction, SqlRequestOptions, CancellationToken, Task<TResult>> executor,
         CancellationToken cancellationToken)
