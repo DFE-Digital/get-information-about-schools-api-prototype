@@ -1,4 +1,5 @@
 ﻿using DfE.CleanArchitecture.Common.CrossCutting.Mapper;
+using DfE.GetInformationAboutSchools.Prototyping.API.Establishments.GetEstablishments.Controllers;
 using DfE.GetInformationAboutSchools.Prototyping.API.Shared.ModelBinding.Attributes;
 using DfE.GetInformationAboutSchools.Prototyping.API.Shared.Response;
 using DfE.GetInformationAboutSchools.Prototyping.API.Shared.Response.Mappers;
@@ -75,14 +76,14 @@ public sealed class EstablishmentGroupsController : ControllerBase
     public async Task<IActionResult> Get(
         [FromQuery]
         [RequestWithRequiredFields("EstablishmentGroups")]
-        GetEstablishmentGroupsRequest requiredFields,
+        GetEstablishmentGroupsRequest requiredEstablishmentGroupFields,
         CancellationToken cancellationToken = default)
     {
         UseCaseResponse<IReadOnlyCollection<EstablishmentGroup>> result =
             await _getEstablishmentGroupsUseCase
                 .HandleRequestAsync(
                     GetEstablishmentGroupsByRequiredFieldsRequest
-                        .Create(requiredFields.Fields), cancellationToken);
+                        .Create(requiredEstablishmentGroupFields.Fields), cancellationToken);
 
         if (!result.SuccessfulRequest)
         {

@@ -14,6 +14,6 @@
         /// and the value is the array of field names that should be applied when
         /// no explicit query-string values are provided by the client.
         /// </summary>
-        public Dictionary<string, string[]> RequiredFields { get; set; } = new();
+        public Dictionary<string, string[]> RequiredFields { get; set; } = [];
     }
 }

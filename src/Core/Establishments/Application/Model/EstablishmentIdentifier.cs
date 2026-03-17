@@ -14,7 +14,7 @@ public sealed partial class EstablishmentIdentifier : ValueObject<EstablishmentI
     /// <summary>
     /// Gets the establishment's URN. Always a valid 6‑digit number.
     /// </summary>
-    public int Urn { get; }
+    public string Urn { get; }
 
     /// <summary>
     /// Creates a new <see cref="EstablishmentIdentifier"/> with a validated URN.
@@ -23,7 +23,7 @@ public sealed partial class EstablishmentIdentifier : ValueObject<EstablishmentI
     /// <exception cref="ArgumentException">
     /// Thrown when <paramref name="urn"/> does not match the required format.
     /// </exception>
-    public EstablishmentIdentifier(int urn)
+    public EstablishmentIdentifier(string urn)
     {
         if (!IsValidUrn(urn))
             throw new ArgumentException(
@@ -50,13 +50,13 @@ public sealed partial class EstablishmentIdentifier : ValueObject<EstablishmentI
     /// </summary>
     /// <param name="urn">The URN to validate.</param>
     /// <returns><c>true</c> if the URN is valid; otherwise, <c>false</c>.</returns>
-    private static bool IsValidUrn(int urn) =>
-        UrnValidation().IsMatch(urn.ToString());
+    private static bool IsValidUrn(string urn) =>
+        UrnValidation().IsMatch(urn);
 
     /// <summary>
     /// Regular expression pattern for validating a 5 to 7‑digit URN.
     /// </summary>
-    private const string UrnPattern = @"^\d{5,7}$";
+    private const string UrnPattern = @"^UNDEFINED|\d{5,7}$";
 
     /// <summary>
     /// Compiled regular expression for URN validation.

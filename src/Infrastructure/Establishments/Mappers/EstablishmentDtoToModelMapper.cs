@@ -2,7 +2,7 @@
 using DfE.GetInformationAboutSchools.Prototyping.Core.Establishments.Application.Model;
 using DfE.GetInformationAboutSchools.Prototyping.Core.Establishments.Application.Model.ValidationServices.Address;
 using DfE.GetInformationAboutSchools.Prototyping.Core.Establishments.Application.Model.ValidationServices.ContactDetails;
-using DfE.GetInformationAboutSchools.Prototyping.Infrastructure.Establishments.Model;
+using DfE.GetInformationAboutSchools.Prototyping.Infrastructure.Establishments.DataTransferObjects;
 
 namespace DfE.GetInformationAboutSchools.Prototyping.Infrastructure.Establishments.Mappers;
 

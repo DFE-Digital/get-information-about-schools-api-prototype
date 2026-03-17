@@ -34,6 +34,12 @@ public class CsvResponseBuilder : ICsvResponseBuilder
     private const char Quote = '"';
 
     /// <summary>
+    /// Sentinel value used across DTOs to represent missing or undefined data.
+    /// When encountered, it is treated as an empty CSV field.
+    /// </summary>
+    private const string Undefined = "UNDEFINED";
+
+    /// <summary>
     /// Writes a CSV file to the HTTP response stream using the supplied rows and column mapping.
     /// </summary>
     /// <typeparam name="TRowType">The type of the row model.</typeparam>
@@ -58,31 +64,76 @@ public class CsvResponseBuilder : ICsvResponseBuilder
         response.ContentType = ContentType;
         response.Headers[ContentDispositionHeader] = $"attachment; filename=\"{fileName}\"";
 
-        StreamWriter writer =
-            new(response.Body, Encoding.UTF8, leaveOpen: false);
+        // Materialise all row data so we can inspect columns before writing
+        List<string[]> rowData = rows
+            .SelectMany(rowSelector)
+            .ToList();
+
+        // Determine which columns contain at least one meaningful value
+        HashSet<int> includedColumnIndexes = GetIncludedColumnIndexes(rowData);
+
+        // Filter header columns based on included indexes
+        List<string> filteredHeaders = headerColumns
+            .Where((_, index) => includedColumnIndexes.Contains(index))
+            .ToList();
+
+        StreamWriter writer = new(response.Body, Encoding.UTF8, leaveOpen: false);
 
         await using (writer)
         {
             // Write header row
-            string headerLine = string.Join(Delimiter, headerColumns);
+            string headerLine = string.Join(Delimiter, filteredHeaders);
             await writer.WriteLineAsync(headerLine);
 
-            // Write each data row (may be multiple rows per model)
-            foreach (TRowType row in rows)
+            // Write each filtered data row
+            foreach (string[] fields in rowData)
             {
                 cancellationToken.ThrowIfCancellationRequested();
 
-                foreach (string[] fields in rowSelector(row))
-                {
-                    string line = BuildLine(fields);
-                    await writer.WriteLineAsync(line);
-                }
+                string[] filteredFields = fields
+                    .Where((_, index) => includedColumnIndexes.Contains(index))
+                    .ToArray();
 
-                await writer.FlushAsync(cancellationToken);
+                string line = BuildLine(filteredFields);
+                await writer.WriteLineAsync(line);
             }
+
+            await writer.FlushAsync(cancellationToken);
         }
 
         return new EmptyResult();
+    }
+
+    /// <summary>
+    /// Determines which column indexes contain at least one meaningful value.
+    /// A column is excluded if all values are null, whitespace, or "UNDEFINED".
+    /// </summary>
+    /// <param name="rows">The materialised CSV rows.</param>
+    /// <returns>A set of column indexes that should be included in the output.</returns>
+    private static HashSet<int> GetIncludedColumnIndexes(List<string[]> rows)
+    {
+        HashSet<int> included = new();
+
+        if (rows.Count == 0)
+        {
+            return included;
+        }
+
+        int columnCount = rows[0].Length;
+
+        for (int col = 0; col < columnCount; col++)
+        {
+            bool hasMeaningfulValue = rows.Any(row =>
+                !string.IsNullOrWhiteSpace(row[col]) &&
+                !string.Equals(row[col], Undefined, StringComparison.OrdinalIgnoreCase));
+
+            if (hasMeaningfulValue)
+            {
+                included.Add(col);
+            }
+        }
+
+        return included;
     }
 
     /// <summary>
@@ -109,23 +160,27 @@ public class CsvResponseBuilder : ICsvResponseBuilder
 
     /// <summary>
     /// Escapes a CSV field according to RFC 4180 rules.
-    /// Wraps fields in quotes if they contain commas, quotes, or newline characters.
+    /// Also treats the sentinel value <c>UNDEFINED</c> as an empty field.
     /// </summary>
     /// <param name="value">The field value to escape.</param>
     /// <returns>A safely escaped CSV field.</returns>
     private static string Escape(string? value)
     {
-        if (string.IsNullOrWhiteSpace(value))
+        // Treat null, whitespace, or UNDEFINED as empty
+        if (string.IsNullOrWhiteSpace(value) ||
+            string.Equals(value, Undefined, StringComparison.OrdinalIgnoreCase))
         {
             return string.Empty;
         }
 
-        string escaped =
-            value.Replace(Quote.ToString(), $"{Quote}{Quote}");
+        // Escape embedded quotes
+        string escaped = value.Replace(Quote.ToString(), $"{Quote}{Quote}");
 
+        // Wrap in quotes if required
         return (escaped.Contains(Delimiter) ||
-            escaped.Contains(Quote) ||
-            escaped.Contains('\n')) ?
-                $"{Quote}{escaped}{Quote}" : escaped;
+                escaped.Contains(Quote) ||
+                escaped.Contains('\n'))
+            ? $"{Quote}{escaped}{Quote}"
+            : escaped;
     }
 }

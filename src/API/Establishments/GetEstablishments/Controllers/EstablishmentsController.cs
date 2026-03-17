@@ -1,4 +1,5 @@
 using DfE.CleanArchitecture.Common.CrossCutting.Mapper;
+using DfE.GetInformationAboutSchools.Prototyping.API.EstablishmentGroups.GetEstablishmentGroups.Controllers;
 using DfE.GetInformationAboutSchools.Prototyping.API.Shared.ModelBinding.Attributes;
 using DfE.GetInformationAboutSchools.Prototyping.API.Shared.Response;
 using DfE.GetInformationAboutSchools.Prototyping.API.Shared.Response.Mappers;
@@ -76,7 +77,7 @@ public sealed class EstablishmentsController : ControllerBase
     public async Task<IActionResult> Get(
         [FromQuery]
         [RequestWithRequiredFields("Establishments")]
-        GetEstablishmentGroupsRequest requiredEstablishmentFields,
+        GetEstablishmentsRequest requiredEstablishmentFields,
         CancellationToken cancellationToken = default)
     {
         UseCaseResponse<IReadOnlyCollection<Establishment>> result =
@@ -117,14 +118,16 @@ public sealed class EstablishmentsController : ControllerBase
 
     [HttpGet("csv", Name = "GetEstablishmentsCsv")]
     public async Task<IActionResult> GetCsv(
-        [FromQuery] string[] requiredFields,
+        [FromQuery]
+        [RequestWithRequiredFields("Establishments")]
+        GetEstablishmentsRequest requiredFields,
         CancellationToken cancellationToken)
     {
         UseCaseResponse<IReadOnlyCollection<Establishment>> result =
             await _getEstablishmentsUseCase
                 .HandleRequestAsync(
                     GetEstablishmentsByRequiredFieldsRequest
-                        .Create(requiredFields), cancellationToken);
+                        .Create(requiredFields.Fields), cancellationToken);
 
         if (!result.SuccessfulRequest)
         {

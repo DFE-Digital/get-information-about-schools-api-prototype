@@ -10,7 +10,7 @@ public sealed class EstablishmentOverviewViewModel
     /// <summary>
     /// Gets the unique reference number (URN) assigned to the establishment.
     /// </summary>
-    public required int Urn { get; init; }
+    public required string Urn { get; init; }
 
     /// <summary>
     /// Gets the official name of the establishment.

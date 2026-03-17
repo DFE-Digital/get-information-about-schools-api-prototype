@@ -12,7 +12,7 @@ public sealed class EstablishmentViewModel
     /// <summary>
     /// Gets or sets the unique numeric identifier (URN) assigned to the establishment.
     /// </summary>
-    public required int URN { get; set; }
+    public required string URN { get; set; }
 
     /// <summary>
     /// Gets or sets the official name of the establishment.

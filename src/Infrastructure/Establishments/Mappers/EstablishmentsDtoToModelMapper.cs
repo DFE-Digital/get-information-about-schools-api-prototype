@@ -1,6 +1,6 @@
 ﻿using DfE.CleanArchitecture.Common.CrossCutting.Mapper;
 using DfE.GetInformationAboutSchools.Prototyping.Core.Establishments.Application.Model;
-using DfE.GetInformationAboutSchools.Prototyping.Infrastructure.Establishments.Model;
+using DfE.GetInformationAboutSchools.Prototyping.Infrastructure.Establishments.DataTransferObjects;
 using System.Buffers;
 
 namespace DfE.GetInformationAboutSchools.Prototyping.Infrastructure.Establishments.Mappers;

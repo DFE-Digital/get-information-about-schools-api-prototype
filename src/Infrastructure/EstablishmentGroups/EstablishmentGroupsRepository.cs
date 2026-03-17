@@ -103,6 +103,9 @@ public sealed class EstablishmentGroupsRepository : IEstablishmentGroupsReposito
                 new { URN = "" },   // This is a bug and needs to be fixed in the sql framework to allow for no parameters to be passed in!
                 cancellationToken);
 
+
+        requiredFields.Add(nameof(EstablishmentGroupDataTransferObject.UID));
+
         IEnumerable<EstablishmentGroupDataTransferObject> shapedDtos =
             await _dataShaper.ShapeDataAsync(dtos, requiredFields);
 

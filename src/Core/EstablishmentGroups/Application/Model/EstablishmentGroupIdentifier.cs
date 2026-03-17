@@ -52,8 +52,8 @@ public sealed partial class EstablishmentGroupIdentifier : ValueObject<Establish
     /// </summary>
     /// <param name="urn">The UID value to validate.</param>
     /// <returns><c>true</c> if the UID is valid; otherwise, <c>false</c>.</returns>
-    private static bool IsValidUid(int urn) =>
-        UidValidation().IsMatch(urn.ToString());
+    private static bool IsValidUid(int uid) =>
+        UidValidation().IsMatch(uid.ToString());
 
     /// <summary>
     /// Regular expression pattern for validating a 4 to 5‑digit UID.

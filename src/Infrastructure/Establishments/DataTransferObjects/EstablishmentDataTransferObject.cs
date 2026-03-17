@@ -1,4 +1,6 @@
-﻿namespace DfE.GetInformationAboutSchools.Prototyping.Infrastructure.Establishments.Model;
+﻿using DfE.GetInformationAboutSchools.Prototyping.Infrastructure.Shared.DataTransferObjects.Extensions;
+
+namespace DfE.GetInformationAboutSchools.Prototyping.Infrastructure.Establishments.DataTransferObjects;
 
 /// <summary>
 /// Represents the raw establishment data as retrieved from the data source.
@@ -12,6 +14,7 @@ public sealed class EstablishmentDataTransferObject
     /// </summary>
     private const string DefaultValue = "UNDEFINED";
 
+    private string _urn  = DefaultValue;
     private string _establishmentName = DefaultValue;
     private string _schoolWebsite = DefaultValue;
     private string _telephoneNum = DefaultValue;
@@ -25,7 +28,11 @@ public sealed class EstablishmentDataTransferObject
     /// <summary>
     /// Gets or sets the unique numeric identifier (URN) assigned to the establishment.
     /// </summary>
-    public int URN { get; set; }
+    public string URN
+    {
+        get => _urn;
+        set => _urn = value.Normalise();
+    }
 
     /// <summary>
     /// Gets or sets the official name of the establishment.
@@ -33,7 +40,7 @@ public sealed class EstablishmentDataTransferObject
     public string EstablishmentName
     {
         get => _establishmentName;
-        set => _establishmentName = string.IsNullOrWhiteSpace(value) ? DefaultValue : value;
+        set => _establishmentName = value.Normalise();
     }
 
     /// <summary>
@@ -42,7 +49,7 @@ public sealed class EstablishmentDataTransferObject
     public string SchoolWebsite
     {
         get => _schoolWebsite;
-        set => _schoolWebsite = string.IsNullOrWhiteSpace(value) ? DefaultValue : value;
+        set => _schoolWebsite = value.Normalise();
     }
 
     /// <summary>
@@ -51,7 +58,7 @@ public sealed class EstablishmentDataTransferObject
     public string TelephoneNum
     {
         get => _telephoneNum;
-        set => _telephoneNum = string.IsNullOrWhiteSpace(value) ? DefaultValue : value;
+        set => _telephoneNum = value.Normalise();
     }
 
     /// <summary>
@@ -60,7 +67,7 @@ public sealed class EstablishmentDataTransferObject
     public string EstablishmentType
     {
         get => _establishmentType;
-        set => _establishmentType = string.IsNullOrWhiteSpace(value) ? DefaultValue : value;
+        set => _establishmentType = value.Normalise();
     }
 
     /// <summary>
@@ -69,7 +76,7 @@ public sealed class EstablishmentDataTransferObject
     public string EducationPhase
     {
         get => _educationPhase;
-        set => _educationPhase = string.IsNullOrWhiteSpace(value) ? DefaultValue : value;
+        set => _educationPhase = value.Normalise();
     }
 
     /// <summary>
@@ -78,7 +85,7 @@ public sealed class EstablishmentDataTransferObject
     public string Street
     {
         get => _street;
-        set => _street = string.IsNullOrWhiteSpace(value) ? DefaultValue : value;
+        set => _street = value.Normalise();
     }
 
     /// <summary>
@@ -87,7 +94,7 @@ public sealed class EstablishmentDataTransferObject
     public string Town
     {
         get => _town;
-        set => _town = string.IsNullOrWhiteSpace(value) ? DefaultValue : value;
+        set => _town = value.Normalise();
     }
 
     /// <summary>
@@ -96,7 +103,7 @@ public sealed class EstablishmentDataTransferObject
     public string Postcode
     {
         get => _postcode;
-        set => _postcode = string.IsNullOrWhiteSpace(value) ? DefaultValue : value;
+        set => _postcode = value.Normalise();
     }
 
     /// <summary>
@@ -105,6 +112,6 @@ public sealed class EstablishmentDataTransferObject
     public string EstablishmentStatus
     {
         get => _establishmentStatus;
-        set => _establishmentStatus = string.IsNullOrWhiteSpace(value) ? DefaultValue : value;
+        set => _establishmentStatus = value.Normalise();
     }
 }

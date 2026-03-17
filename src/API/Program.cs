@@ -17,7 +17,7 @@ using DfE.GetInformationAboutSchools.Prototyping.Core.Establishments.Application
 using DfE.GetInformationAboutSchools.Prototyping.Core.Establishments.ValidationServices;
 using DfE.GetInformationAboutSchools.Prototyping.Infrastructure;
 using DfE.GetInformationAboutSchools.Prototyping.Infrastructure.Establishments.Mappers;
-using DfE.GetInformationAboutSchools.Prototyping.Infrastructure.Establishments.Model;
+using DfE.GetInformationAboutSchools.Prototyping.Infrastructure.Establishments.DataTransferObjects;
 using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.Data.SqlClient;
 using System.Text.Json;

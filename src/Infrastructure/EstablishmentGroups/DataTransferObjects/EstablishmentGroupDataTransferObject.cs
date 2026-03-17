@@ -1,4 +1,6 @@
-﻿namespace DfE.GetInformationAboutSchools.Prototyping.Infrastructure.EstablishmentGroups.DataTransferObjects;
+﻿using DfE.GetInformationAboutSchools.Prototyping.Infrastructure.Shared.DataTransferObjects.Extensions;
+
+namespace DfE.GetInformationAboutSchools.Prototyping.Infrastructure.EstablishmentGroups.DataTransferObjects;
 
 /// <summary>
 /// Represents a data transfer object (DTO) used to transport information
@@ -11,20 +13,10 @@ public sealed class EstablishmentGroupDataTransferObject
     /// </summary>
     private const string DefaultValue = "UNDEFINED";
 
-    /// <summary>
-    /// Backing field for <see cref="EstablishmentName"/> ensuring a non-empty value.
-    /// </summary>
     private string _establishmentName = DefaultValue;
-
-    /// <summary>
-    /// Backing field for <see cref="GroupName"/> ensuring a non-empty value.
-    /// </summary>
     private string _groupName = DefaultValue;
-
-    /// <summary>
-    /// Backing field for <see cref="GroupTypeName"/> ensuring a non-empty value.
-    /// </summary>
     private string _groupTypeName = DefaultValue;
+    private string _establishmentUrn = DefaultValue;
 
     /// <summary>
     /// Gets or sets the unique identifier (UID) assigned to the establishment group.
@@ -38,7 +30,7 @@ public sealed class EstablishmentGroupDataTransferObject
     public string GroupName
     {
         get => _groupName;
-        set => _groupName = string.IsNullOrWhiteSpace(value) ? DefaultValue : value;
+        set => _groupName = value.Normalise();
     }
 
     /// <summary>
@@ -48,14 +40,18 @@ public sealed class EstablishmentGroupDataTransferObject
     public string GroupTypeName
     {
         get => _groupTypeName;
-        set => _groupTypeName = string.IsNullOrWhiteSpace(value) ? DefaultValue : value;
+        set => _groupTypeName = value.Normalise();
     }
 
     /// <summary>
     /// Gets or sets the unique reference number (URN) of the establishment
     /// associated with this group.
     /// </summary>
-    public int EstablishmentUrn { get; set; }
+    public string EstablishmentUrn
+    {
+        get => _establishmentUrn;
+        set => _establishmentUrn = value.Normalise();
+    }
 
     /// <summary>
     /// Gets or sets the official name of the establishment.
@@ -64,6 +60,6 @@ public sealed class EstablishmentGroupDataTransferObject
     public string EstablishmentName
     {
         get => _establishmentName;
-        set => _establishmentName = string.IsNullOrWhiteSpace(value) ? DefaultValue : value;
+        set => _establishmentName = value.Normalise();
     }
 }

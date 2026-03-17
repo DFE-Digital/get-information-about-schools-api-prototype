@@ -14,7 +14,7 @@ public sealed partial class EstablishmentOverview : ValueObject<EstablishmentOve
     /// Gets the unique reference number (URN) assigned to the establishment.
     /// Guaranteed to be a valid 5–7 digit numeric value.
     /// </summary>
-    public int URN { get; }
+    public string URN { get; }
 
     /// <summary>
     /// Gets the official name of the establishment.
@@ -27,7 +27,7 @@ public sealed partial class EstablishmentOverview : ValueObject<EstablishmentOve
     /// </summary>
     /// <param name="urn">The validated establishment URN.</param>
     /// <param name="name">The validated establishment name.</param>
-    private EstablishmentOverview(int urn, string name)
+    private EstablishmentOverview(string urn, string name)
     {
         URN = urn;
         Name = name;
@@ -44,7 +44,7 @@ public sealed partial class EstablishmentOverview : ValueObject<EstablishmentOve
     /// Thrown when the URN or name is missing or invalid.
     /// </exception>
     public static EstablishmentOverview Create(
-        int urn,
+        string urn,
         string? name)
     {
         name = name?.Trim();
@@ -59,7 +59,7 @@ public sealed partial class EstablishmentOverview : ValueObject<EstablishmentOve
     /// <param name="urn">The URN to validate.</param>
     /// <param name="name">The name to validate.</param>
     private static void Validate(
-        int urn,
+        string urn,
         string? name)
     {
         EnsureNameIsProvided(name);
@@ -84,13 +84,13 @@ public sealed partial class EstablishmentOverview : ValueObject<EstablishmentOve
     /// </summary>
     /// <param name="urn">The URN to validate.</param>
     /// <returns><c>true</c> if the URN is valid; otherwise, <c>false</c>.</returns>
-    private static bool EnsureValidUrn(int urn) =>
+    private static bool EnsureValidUrn(string urn) =>
         UrnValidation().IsMatch(urn.ToString());
 
     /// <summary>
     /// Regular expression pattern for validating a 5 to 7‑digit URN.
     /// </summary>
-    private const string UrnPattern = @"^\d{5,7}$";
+    private const string UrnPattern = @"UNDEFINED|^\d{5,7}$";
 
     /// <summary>
     /// Compiled regular expression for URN validation.

@@ -8,7 +8,7 @@ using DfE.GetInformationAboutSchools.Prototyping.Infrastructure.EstablishmentGro
 using DfE.GetInformationAboutSchools.Prototyping.Infrastructure.EstablishmentGroups.Mappers;
 using DfE.GetInformationAboutSchools.Prototyping.Infrastructure.Establishments;
 using DfE.GetInformationAboutSchools.Prototyping.Infrastructure.Establishments.Mappers;
-using DfE.GetInformationAboutSchools.Prototyping.Infrastructure.Establishments.Model;
+using DfE.GetInformationAboutSchools.Prototyping.Infrastructure.Establishments.DataTransferObjects;
 using DfE.GetInformationAboutSchools.Prototyping.Infrastructure.Shared;
 using DfE.GetInformationAboutSchools.Prototyping.Infrastructure.Shared.DataTransferObjectShaper;
 using DfE.GetInformationAboutSchools.Prototyping.Infrastructure.Shared.DataTransferObjectShaper.DataShapingRules;

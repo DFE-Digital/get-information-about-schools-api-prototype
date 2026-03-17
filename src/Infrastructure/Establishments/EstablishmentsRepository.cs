@@ -1,7 +1,7 @@
 ﻿using DfE.CleanArchitecture.Common.CrossCutting.Mapper;
 using DfE.GetInformationAboutSchools.Prototyping.Core.Establishments.Application.Model;
 using DfE.GetInformationAboutSchools.Prototyping.Core.Establishments.Infrastructure;
-using DfE.GetInformationAboutSchools.Prototyping.Infrastructure.Establishments.Model;
+using DfE.GetInformationAboutSchools.Prototyping.Infrastructure.Establishments.DataTransferObjects;
 using DfE.GetInformationAboutSchools.Prototyping.Infrastructure.Shared;
 using DfE.GetInformationAboutSchools.Prototyping.Infrastructure.Shared.DataTransferObjectShaper;
 
