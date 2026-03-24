@@ -15,5 +15,6 @@
     </None>
     <None Include="docker-compose.yml" />
     <None Include=".dockerignore" />
+    <None Include="generate-data-seed.ps1" />
   </ItemGroup>
 </Project>
