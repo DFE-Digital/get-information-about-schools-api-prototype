@@ -327,3 +327,7 @@ MigrationBackup/
 
 # Ionide working folder
 .ionide/
+
+# Environment variables
+.env
+

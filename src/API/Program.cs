@@ -1,7 +1,6 @@
 ﻿using Dfe.Data.Common.Infrastructure.Persistence.Sql.Dapper;
 using DfE.CleanArchitecture.Common.CrossCutting.Mapper;
 using DfE.GetInformationAboutSchools.Prototyping.API.EstablishmentGroups.Mappers;
-using DfE.GetInformationAboutSchools.Prototyping.API.EstablishmentGroups.ViewModels;
 using DfE.GetInformationAboutSchools.Prototyping.API.Establishments.Mappers;
 using DfE.GetInformationAboutSchools.Prototyping.API.Shared.DynamicViewModelConverters;
 using DfE.GetInformationAboutSchools.Prototyping.API.Shared.DynamicViewModelConverters.ConversionRules;
@@ -16,10 +15,10 @@ using DfE.GetInformationAboutSchools.Prototyping.Core.Establishments;
 using DfE.GetInformationAboutSchools.Prototyping.Core.Establishments.Application.Model;
 using DfE.GetInformationAboutSchools.Prototyping.Core.Establishments.ValidationServices;
 using DfE.GetInformationAboutSchools.Prototyping.Infrastructure;
-using DfE.GetInformationAboutSchools.Prototyping.Infrastructure.Establishments.Mappers;
 using DfE.GetInformationAboutSchools.Prototyping.Infrastructure.Establishments.DataTransferObjects;
+using DfE.GetInformationAboutSchools.Prototyping.Infrastructure.Establishments.Mappers;
 using Microsoft.AspNetCore.ResponseCompression;
-using Microsoft.Data.SqlClient;
+using Npgsql;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -51,12 +50,11 @@ builder.Services.AddSingleton<IDynamicConversionRule, EnumerableConversionRule>(
 builder.Services.AddSingleton<IDynamicConversionRule, ObjectConversionRule>();
 builder.Services.AddSingleton<DynamicViewModelConverter>();
 
-// SQL Server connection
-var sqlServerConnectionString = builder.Configuration.GetConnectionString("Edubase");
+var postgresConnectionString = builder.Configuration.GetConnectionString("Edubase");
 
 builder.Services.AddDatabase(
     "edubase",
-    _ => new SqlConnection(sqlServerConnectionString),
+    _ => new NpgsqlConnection(postgresConnectionString),
     options => options.DefaultTimeout = 5
 );
 

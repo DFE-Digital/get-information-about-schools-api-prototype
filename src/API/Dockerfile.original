@@ -1,0 +1,51 @@
+# Base image
+FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS base
+USER $APP_UID
+WORKDIR /app
+EXPOSE 8080
+EXPOSE 8081
+
+# Build stage
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+ARG BUILD_CONFIGURATION=Release
+
+# Accept GitHub credentials from docker-compose or CLI
+ARG GITHUB_USERNAME
+ARG GITHUB_TOKEN
+
+# Make them available to NuGet inside the container
+ENV GITHUB_USERNAME=$GITHUB_USERNAME
+ENV GITHUB_TOKEN=$GITHUB_TOKEN
+
+WORKDIR /src
+
+# Copy NuGet.config into the global NuGet location
+COPY NuGet.config /root/.nuget/NuGet/NuGet.Config
+
+# Copy ONLY csproj files first (layer caching)
+COPY ./src/API/*.csproj ./API/
+COPY ./src/Core/*.csproj ./Core/
+COPY ./src/Infrastructure/*.csproj ./Infrastructure/
+
+# Restore using the API project
+RUN dotnet restore "./API/DfE.GetInformationAboutSchools.Prototyping.API.csproj"
+
+# Copy the rest of the source code (corrected paths)
+COPY ./src/API ./API
+COPY ./src/Core ./Core
+COPY ./src/Infrastructure ./Infrastructure
+
+# Build
+WORKDIR "/src/API"
+RUN dotnet build "./DfE.GetInformationAboutSchools.Prototyping.API.csproj" -c $BUILD_CONFIGURATION -o /app/build
+
+# Publish
+FROM build AS publish
+ARG BUILD_CONFIGURATION=Release
+RUN dotnet publish "./DfE.GetInformationAboutSchools.Prototyping.API.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
+
+# Final runtime image
+FROM base AS final
+WORKDIR /app
+COPY --from=publish /app/publish .
+ENTRYPOINT ["dotnet", "DfE.GetInformationAboutSchools.Prototyping.API.dll"]

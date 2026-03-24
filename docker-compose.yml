@@ -1,0 +1,40 @@
+﻿services:
+  db:
+    image: postgres:16
+    container_name: postgres-db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: GIAS_prototype
+    ports:
+      - "5433:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+      - ./docker/db/init:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  dfe.getinformationaboutschools.prototyping.api:
+    build:
+      context: .
+      dockerfile: ./src/API/Dockerfile
+      args:
+        GITHUB_USERNAME: ${GITHUB_USERNAME}
+        GITHUB_TOKEN: ${GITHUB_TOKEN}
+
+    depends_on:
+      db:
+        condition: service_healthy
+
+    environment:
+      ASPNETCORE_ENVIRONMENT: Docker
+      ConnectionStrings__DefaultConnection: "Host=db;Port=5432;Database=GIAS_prototype;Username=postgres;Password=postgres"
+
+    ports:
+      - "8080:8080"
+
+volumes:
+  db_data:

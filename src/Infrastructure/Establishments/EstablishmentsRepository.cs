@@ -8,28 +8,28 @@ using DfE.GetInformationAboutSchools.Prototyping.Infrastructure.Shared.DataTrans
 namespace DfE.GetInformationAboutSchools.Prototyping.Infrastructure.Establishments;
 
 /// <summary>
-/// Provides access to establishment data stored in the SQL database.
-/// Responsible for executing queries and mapping results into domain
-/// <see cref="Establishment"/> objects.
+/// Repository responsible for retrieving establishment data from the SQL database.
+/// Executes SQL queries, shapes DTOs, and maps them into domain <see cref="Establishment"/> objects.
 /// </summary>
 public sealed class EstablishmentsRepository : IEstablishmentsRepository
 {
     private readonly ISqlReader _sqlReader;
     private readonly IDataTransferObjectShaper<EstablishmentDataTransferObject> _dataShaper;
-    private readonly IMapper<
-        EstablishmentDataTransferObject, Establishment> _establishmentMapper;
-    private readonly IMapper<
-        IEnumerable<EstablishmentDataTransferObject>,
-        IReadOnlyCollection<Establishment>> _establishmentsMapper;
+    private readonly IMapper<EstablishmentDataTransferObject, Establishment> _establishmentMapper;
+    private readonly IMapper<IEnumerable<EstablishmentDataTransferObject>, IReadOnlyCollection<Establishment>> _establishmentsMapper;
 
+    /// <summary>
+    /// Creates a new instance of <see cref="EstablishmentsRepository"/>.
+    /// </summary>
+    /// <param name="sqlReader">Service used to execute SQL queries and materialize DTOs.</param>
+    /// <param name="dataShaper">Shapes DTOs based on the fields requested by the caller.</param>
+    /// <param name="establishmentMapper">Maps a single DTO into a domain <see cref="Establishment"/>.</param>
+    /// <param name="establishmentsMapper">Maps a collection of DTOs into domain <see cref="Establishment"/> objects.</param>
     public EstablishmentsRepository(
         ISqlReader sqlReader,
         IDataTransferObjectShaper<EstablishmentDataTransferObject> dataShaper,
-        IMapper<
-            EstablishmentDataTransferObject, Establishment> establishmentMapper,
-        IMapper<
-            IEnumerable<EstablishmentDataTransferObject>,
-            IReadOnlyCollection<Establishment>> establishmentsMapper)
+        IMapper<EstablishmentDataTransferObject, Establishment> establishmentMapper,
+        IMapper<IEnumerable<EstablishmentDataTransferObject>, IReadOnlyCollection<Establishment>> establishmentsMapper)
     {
         _sqlReader = sqlReader;
         _dataShaper = dataShaper;
@@ -37,33 +37,41 @@ public sealed class EstablishmentsRepository : IEstablishmentsRepository
         _establishmentsMapper = establishmentsMapper;
     }
 
-    public async Task<Establishment> GetEstablishment(
-        int urn, CancellationToken cancellationToken = default)
+    /// <summary>
+    /// Retrieves a single establishment by its URN.
+    /// </summary>
+    /// <param name="urn">The unique reference number of the establishment.</param>
+    /// <param name="cancellationToken">Token used to cancel the asynchronous operation.</param>
+    /// <returns>
+    /// A fully populated <see cref="Establishment"/> domain object.
+    /// Throws if the URN does not exist or if multiple rows are unexpectedly returned.
+    /// </returns>
+    public async Task<Establishment> GetEstablishment(int urn, CancellationToken cancellationToken = default)
     {
         const string Sql =
             """
             SELECT
-                URN,
-                EstablishmentName,
+                e.URN,
+                e.EstablishmentName,
                 et.name AS EstablishmentType,
                 ep.name AS EducationPhase,
-                WebsiteAddress,
-                TelephoneNumber,
-                Street,
-                Town,
-                Postcode,
+                e.SchoolWebsite,
+                e.TelephoneNum,
+                e.Street,
+                e.Town,
+                e.Postcode,
                 es.name AS EstablishmentStatus
             FROM Establishment AS e
-            INNER JOIN EducationPhase ep
-                ON e.educationPhase_code = ep.code
             INNER JOIN EstablishmentType et
-                ON e.type_code = et.code
+                ON e.EstablishmentTypeId = et.id
+            INNER JOIN EducationPhase ep
+                ON e.EducationPhaseId = ep.id
             INNER JOIN EstablishmentStatus es
-                ON e.status_code = es.code
-            WHERE URN = @URN;
+                ON e.EstablishmentStatusId = es.id
+            WHERE e.URN = @URN;
             """;
 
-        EstablishmentDataTransferObject? dto =
+        EstablishmentDataTransferObject dto =
             await _sqlReader.QuerySingleAsync<EstablishmentDataTransferObject>(
                 Sql,
                 new { URN = urn },
@@ -73,13 +81,15 @@ public sealed class EstablishmentsRepository : IEstablishmentsRepository
     }
 
     /// <summary>
-    /// Retrieves all establishments from the database and maps them into
-    /// domain <see cref="Establishment"/> instances.
+    /// Retrieves all establishments, shaping the returned DTOs based on the fields
+    /// requested by the caller.
     /// </summary>
-    /// <param name="cancellationToken">A token that may be used to cancel the asynchronous operation.</param>
+    /// <param name="requiredFields">
+    /// A set of field names that must be included in the shaped DTOs.
+    /// </param>
+    /// <param name="cancellationToken">Token used to cancel the asynchronous operation.</param>
     /// <returns>
-    /// A read-only collection of <see cref="Establishment"/> objects representing
-    /// the establishments stored in the database.
+    /// A collection of <see cref="Establishment"/> domain objects.
     /// </returns>
     public async Task<IReadOnlyCollection<Establishment>> GetEstablishments(
         HashSet<string> requiredFields,
@@ -88,29 +98,29 @@ public sealed class EstablishmentsRepository : IEstablishmentsRepository
         const string Sql =
             """
             SELECT
-                URN,
-                EstablishmentName,
+                e.URN,
+                e.EstablishmentName,
                 et.name AS EstablishmentType,
                 ep.name AS EducationPhase,
-                WebsiteAddress,
-                TelephoneNumber,
-                Street,
-                Town,
-                Postcode,
+                e.SchoolWebsite,
+                e.TelephoneNum,
+                e.Street,
+                e.Town,
+                e.Postcode,
                 es.name AS EstablishmentStatus
             FROM Establishment AS e
-            INNER JOIN EducationPhase ep
-                ON e.educationPhase_code = ep.code
             INNER JOIN EstablishmentType et
-                ON e.type_code = et.code
+                ON e.EstablishmentTypeId = et.id
+            INNER JOIN EducationPhase ep
+                ON e.EducationPhaseId = ep.id
             INNER JOIN EstablishmentStatus es
-                ON e.status_code = es.code;
+                ON e.EstablishmentStatusId = es.id;
             """;
 
         IEnumerable<EstablishmentDataTransferObject> dtos =
             await _sqlReader.QueryAsync<EstablishmentDataTransferObject>(
                 Sql,
-                new { URN = "" },   // This is a bug and needs to be fixed in the sql framework to allow for no parameters to be passed in!
+                new { },
                 cancellationToken);
 
         IEnumerable<EstablishmentDataTransferObject> shapedDtos =
