@@ -1,5 +1,5 @@
 -- AUTO-GENERATED SEED FILE
--- Generated: 2026-03-24T15:41:46.3495628+00:00
+-- Generated: 2026-03-30T08:52:23.6249706+00:00
 
 -- ============================
 -- Lookup table seed data

@@ -47,6 +47,16 @@ public sealed class EstablishmentsController : ControllerBase
         _modelToCsvMapper = modelToCsvMapper;
     }
 
+    [HttpGet("health", Name = "HealthCheck")]
+    public IActionResult Health()
+    {
+        return Ok(new
+        {
+            status = "Service is running",
+            timestamp = DateTime.UtcNow
+        });
+    }
+
     [HttpGet("{urn:int}", Name = "GetEstablishmentByUrn")]
     public async Task<IActionResult> GetByUrn(int urn, CancellationToken cancellationToken = default)
     {
