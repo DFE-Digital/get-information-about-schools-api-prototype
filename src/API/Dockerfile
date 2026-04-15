@@ -29,6 +29,7 @@ COPY ["src/API/DfE.GetInformationAboutSchools.Prototyping.API.csproj", "src/API/
 COPY ["src/Core/DfE.GetInformationAboutSchools.Prototyping.Core.csproj", "src/Core/"]
 COPY ["src/Infrastructure/DfE.GetInformationAboutSchools.Prototyping.Infrastructure.csproj", "src/Infrastructure/"]
 
+
 # Restore using authenticated NuGet.config
 RUN dotnet restore "./src/API/DfE.GetInformationAboutSchools.Prototyping.API.csproj"
 

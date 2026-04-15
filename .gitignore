@@ -330,3 +330,15 @@ MigrationBackup/
 .env
 
 /docker/db/init/002-seed.sql
+# Terraform
+.terraform
+terraform/application/vendor
+terraform/domains/environment_domains/vendor
+terraform/domains/infrastructure/vendor
+terraform.tfstate*
+
+# Downloaded commands
+bin/konduit.sh
+
+# Maintenance page manifests
+maintenance_page/manifests/maintenance/deployment_maintenance.yml
