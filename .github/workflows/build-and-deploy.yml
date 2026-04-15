@@ -54,11 +54,12 @@ jobs:
       with:
         github-token: ${{ secrets.GITHUB_TOKEN }}
         context: ${{ github.workspace }}
+        dockerfile-path: ${{ github.workspace }}/src/API/Dockerfile
         docker-repository: ${{ env.DOCKER_REPOSITORY }}
         max-cache: true
         reuse-cache: true
         snyk-token: ${{ secrets.SNYK_TOKEN }}
-        dockerfile-path: ./src/API/Dockerfile
+
 
 #   test:
 #     name: Run tests
