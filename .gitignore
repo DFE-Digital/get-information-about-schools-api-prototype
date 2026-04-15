@@ -188,8 +188,6 @@ PublishScripts/
 !**/[Pp]ackages/build/
 *.nuget.props
 *.nuget.targets
-# Ignore NuGet configuration
-NuGet.config
 
 # Microsoft Azure Build Output
 csx/
@@ -331,3 +329,4 @@ MigrationBackup/
 # Environment variables
 .env
 
+/docker/db/init/002-seed.sql
