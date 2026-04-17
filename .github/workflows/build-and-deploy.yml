@@ -71,7 +71,10 @@ jobs:
         tags: ${{ env.DOCKER_REPOSITORY }}:${{ github.sha }}
         cache-from: type=gha
         cache-to: type=gha,mode=max
-
+        build-args: |
+          GITHUB_USERNAME=${{ github.actor }}
+        secrets: |
+          github_token=${{ secrets.GITHUB_TOKEN }}
 
 
 #   test:
