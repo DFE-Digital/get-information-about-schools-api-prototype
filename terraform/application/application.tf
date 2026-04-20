@@ -78,6 +78,6 @@ module "application_configuration" {
   # SECRET APP SETTINGS
   # -----------------------------
   secret_variables = {
-    CONNECTIONSTRINGS__EDUBASE = var.edubase_connection_string
+    CONNECTIONSTRINGS__EDUBASE = "keyvault:CONNECTIONSTRINGS--EDUBASE"
   }
 }
