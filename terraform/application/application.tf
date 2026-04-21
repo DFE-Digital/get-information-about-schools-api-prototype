@@ -15,62 +15,62 @@ module "application_configuration" {
   # -----------------------------
   config_variables = {
     # Logging
-    LOGGING__LOGLEVEL__DEFAULT               = "Information"
-    LOGGING__LOGLEVEL__MICROSOFT__ASPNETCORE = "Warning"
-
+    Logging__LogLevel__Default               = "Information"
+    Logging__LogLevel__Microsoft.AspNetCore  = "Warning"
+  
     # Allowed hosts
-    ALLOWEDHOSTS = "*"
-
-    # CSV Mappings - Establishment
-    CSVMAPPINGS__ESTABLISHMENT__COLUMNS__0 = "Identifier.Urn"
-    CSVMAPPINGS__ESTABLISHMENT__COLUMNS__1 = "BasicDetails.Name"
-    CSVMAPPINGS__ESTABLISHMENT__COLUMNS__2 = "BasicDetails.EstablishmentType"
-    CSVMAPPINGS__ESTABLISHMENT__COLUMNS__3 = "BasicDetails.PhaseOfEducation"
-    CSVMAPPINGS__ESTABLISHMENT__COLUMNS__4 = "BasicDetails.Status"
-    CSVMAPPINGS__ESTABLISHMENT__COLUMNS__5 = "Address.Street"
-    CSVMAPPINGS__ESTABLISHMENT__COLUMNS__6 = "Address.Town"
-    CSVMAPPINGS__ESTABLISHMENT__COLUMNS__7 = "Address.Postcode"
-
-    CSVMAPPINGS__ESTABLISHMENT__HEADERS__0 = "URN"
-    CSVMAPPINGS__ESTABLISHMENT__HEADERS__1 = "EstablishmentName"
-    CSVMAPPINGS__ESTABLISHMENT__HEADERS__2 = "EstablishmentType"
-    CSVMAPPINGS__ESTABLISHMENT__HEADERS__3 = "PhaseOfEducation"
-    CSVMAPPINGS__ESTABLISHMENT__HEADERS__4 = "StatusCode"
-    CSVMAPPINGS__ESTABLISHMENT__HEADERS__5 = "Address_Street"
-    CSVMAPPINGS__ESTABLISHMENT__HEADERS__6 = "Address_Town"
-    CSVMAPPINGS__ESTABLISHMENT__HEADERS__7 = "Address_Postcode"
-
-    # CSV Mappings - EstablishmentGroup
-    CSVMAPPINGS__ESTABLISHMENTGROUP__COLUMNS__0 = "Identifier.UID"
-    CSVMAPPINGS__ESTABLISHMENTGROUP__COLUMNS__1 = "BasicDetails.Name"
-    CSVMAPPINGS__ESTABLISHMENTGROUP__COLUMNS__2 = "BasicDetails.GroupType"
-    CSVMAPPINGS__ESTABLISHMENTGROUP__COLUMNS__3 = "GroupEstablishments[].URN"
-    CSVMAPPINGS__ESTABLISHMENTGROUP__COLUMNS__4 = "GroupEstablishments[].Name"
-
-    CSVMAPPINGS__ESTABLISHMENTGROUP__HEADERS__0 = "UID"
-    CSVMAPPINGS__ESTABLISHMENTGROUP__HEADERS__1 = "GroupName"
-    CSVMAPPINGS__ESTABLISHMENTGROUP__HEADERS__2 = "GroupType"
-    CSVMAPPINGS__ESTABLISHMENTGROUP__HEADERS__3 = "URN"
-    CSVMAPPINGS__ESTABLISHMENTGROUP__HEADERS__4 = "EstablishmentName"
-
-    # Default Required Fields - Establishments
-    DEFAULTREQUIREDFIELDS__REQUIREDFIELDS__ESTABLISHMENTS__0  = "URN"
-    DEFAULTREQUIREDFIELDS__REQUIREDFIELDS__ESTABLISHMENTS__1  = "EstablishmentName"
-    DEFAULTREQUIREDFIELDS__REQUIREDFIELDS__ESTABLISHMENTS__2  = "EstablishmentType"
-    DEFAULTREQUIREDFIELDS__REQUIREDFIELDS__ESTABLISHMENTS__3  = "EducationPhase"
-    DEFAULTREQUIREDFIELDS__REQUIREDFIELDS__ESTABLISHMENTS__4  = "WebsiteAddress"
-    DEFAULTREQUIREDFIELDS__REQUIREDFIELDS__ESTABLISHMENTS__5  = "TelephoneNumber"
-    DEFAULTREQUIREDFIELDS__REQUIREDFIELDS__ESTABLISHMENTS__6  = "Street"
-    DEFAULTREQUIREDFIELDS__REQUIREDFIELDS__ESTABLISHMENTS__7  = "Town"
-    DEFAULTREQUIREDFIELDS__REQUIREDFIELDS__ESTABLISHMENTS__8  = "Postcode"
-    DEFAULTREQUIREDFIELDS__REQUIREDFIELDS__ESTABLISHMENTS__9 = "EstablishmentStatus"
-
-    # Default Required Fields - EstablishmentGroups
-    DEFAULTREQUIREDFIELDS__REQUIREDFIELDS__ESTABLISHMENTGROUPS__0 = "UID"
-    DEFAULTREQUIREDFIELDS__REQUIREDFIELDS__ESTABLISHMENTGROUPS__1 = "GroupName"
-    DEFAULTREQUIREDFIELDS__REQUIREDFIELDS__ESTABLISHMENTGROUPS__2 = "GroupTypeName"
-    DEFAULTREQUIREDFIELDS__REQUIREDFIELDS__ESTABLISHMENTGROUPS__3 = "EstablishmentURN"
-    DEFAULTREQUIREDFIELDS__REQUIREDFIELDS__ESTABLISHMENTGROUPS__4 = "EstablishmentName"
+    AllowedHosts = "*"
+  
+    # CsvMappings - Establishment
+    CsvMappings__Establishment__Columns__0 = "Identifier.Urn"
+    CsvMappings__Establishment__Columns__1 = "BasicDetails.Name"
+    CsvMappings__Establishment__Columns__2 = "BasicDetails.EstablishmentType"
+    CsvMappings__Establishment__Columns__3 = "BasicDetails.PhaseOfEducation"
+    CsvMappings__Establishment__Columns__4 = "BasicDetails.Status"
+    CsvMappings__Establishment__Columns__5 = "Address.Street"
+    CsvMappings__Establishment__Columns__6 = "Address.Town"
+    CsvMappings__Establishment__Columns__7 = "Address.Postcode"
+  
+    CsvMappings__Establishment__Headers__0 = "URN"
+    CsvMappings__Establishment__Headers__1 = "EstablishmentName"
+    CsvMappings__Establishment__Headers__2 = "EstablishmentType"
+    CsvMappings__Establishment__Headers__3 = "PhaseOfEducation"
+    CsvMappings__Establishment__Headers__4 = "StatusCode"
+    CsvMappings__Establishment__Headers__5 = "Address_Street"
+    CsvMappings__Establishment__Headers__6 = "Address_Town"
+    CsvMappings__Establishment__Headers__7 = "Address_Postcode"
+  
+    # CsvMappings - EstablishmentGroup
+    CsvMappings__EstablishmentGroup__Columns__0 = "Identifier.UID"
+    CsvMappings__EstablishmentGroup__Columns__1 = "BasicDetails.Name"
+    CsvMappings__EstablishmentGroup__Columns__2 = "BasicDetails.GroupType"
+    CsvMappings__EstablishmentGroup__Columns__3 = "GroupEstablishments[].URN"
+    CsvMappings__EstablishmentGroup__Columns__4 = "GroupEstablishments[].Name"
+  
+    CsvMappings__EstablishmentGroup__Headers__0 = "UID"
+    CsvMappings__EstablishmentGroup__Headers__1 = "GroupName"
+    CsvMappings__EstablishmentGroup__Headers__2 = "GroupType"
+    CsvMappings__EstablishmentGroup__Headers__3 = "URN"
+    CsvMappings__EstablishmentGroup__Headers__4 = "EstablishmentName"
+  
+    # DefaultRequiredFields - Establishments
+    DefaultRequiredFields__RequiredFields__Establishments__0 = "URN"
+    DefaultRequiredFields__RequiredFields__Establishments__1 = "EstablishmentName"
+    DefaultRequiredFields__RequiredFields__Establishments__2 = "EstablishmentType"
+    DefaultRequiredFields__RequiredFields__Establishments__3 = "EducationPhase"
+    DefaultRequiredFields__RequiredFields__Establishments__4 = "WebsiteAddress"
+    DefaultRequiredFields__RequiredFields__Establishments__5 = "TelephoneNumber"
+    DefaultRequiredFields__RequiredFields__Establishments__6 = "Street"
+    DefaultRequiredFields__RequiredFields__Establishments__7 = "Town"
+    DefaultRequiredFields__RequiredFields__Establishments__8 = "Postcode"
+    DefaultRequiredFields__RequiredFields__Establishments__9 = "EstablishmentStatus"
+  
+    # DefaultRequiredFields - EstablishmentGroups
+    DefaultRequiredFields__RequiredFields__EstablishmentGroups__0 = "UID"
+    DefaultRequiredFields__RequiredFields__EstablishmentGroups__1 = "GroupName"
+    DefaultRequiredFields__RequiredFields__EstablishmentGroups__2 = "GroupTypeName"
+    DefaultRequiredFields__RequiredFields__EstablishmentGroups__3 = "EstablishmentURN"
+    DefaultRequiredFields__RequiredFields__EstablishmentGroups__4 = "EstablishmentName"
   }
 
   # -----------------------------
