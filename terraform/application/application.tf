@@ -16,7 +16,7 @@ module "application_configuration" {
   config_variables = {
     # Logging
     Logging__LogLevel__Default              = "Information"
-    Logging__LogLevel__Microsoft.AspNetCore = "Warning"
+    Logging__LogLevel__Microsoft_AspNetCore = "Warning"
 
     # Allowed hosts
     AllowedHosts = "*"
@@ -86,4 +86,25 @@ module "application_configuration" {
   secret_variables = {
     CONNECTIONSTRINGS__EDUBASE = "keyvault:CONNECTIONSTRINGS--EDUBASE"
   }
+}
+
+module "web_application" {
+  source = "./vendor/modules/aks//aks/application"
+
+  is_web = true
+
+  namespace    = var.namespace
+  environment  = var.environment
+  service_name = var.service_name
+
+  cluster_configuration_map  = module.cluster_data.configuration_map
+  kubernetes_config_map_name = module.application_configuration.kubernetes_config_map_name
+  kubernetes_secret_name     = module.application_configuration.kubernetes_secret_name
+
+  docker_image = var.docker_image
+  enable_logit = true
+  web_port     = 8080
+  probe_path   = "/establishments/health"
+
+  send_traffic_to_maintenance_page = var.send_traffic_to_maintenance_page
 }
