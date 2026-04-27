@@ -84,7 +84,7 @@ module "application_configuration" {
   # SECRET APP SETTINGS
   # -----------------------------
   secret_variables = {
-    CONNECTIONSTRINGS__EDUBASE = "keyvault:CONNECTIONSTRINGS--EDUBASE"
+    CONNECTIONSTRINGS__EDUBASE = module.postgres.dotnet_connection_string
   }
 }
 
