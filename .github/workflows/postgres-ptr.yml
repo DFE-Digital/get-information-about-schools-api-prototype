@@ -30,6 +30,9 @@ env:
   SERVICE_SHORT: gias2
   TF_VARS_PATH: terraform/application/config
 
+permissions:
+  id-token: write
+
 jobs:
   ptr-restore:
     name: PTR Restore AKS Database
