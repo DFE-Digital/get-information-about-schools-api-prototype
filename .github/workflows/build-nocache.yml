@@ -13,22 +13,44 @@ jobs:
       DOCKER_REPOSITORY: ghcr.io/dfe-digital/get-information-about-schools-api-prototype
     outputs:
       docker-image-tag: ${{ steps.build-image.outputs.tag }}
+    permissions:
+      packages: write
+      pull-requests: write
     runs-on: ubuntu-latest
 
     steps:
     - uses: actions/checkout@v4
       name: Checkout
 
+    # Set up Buildx
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    # Login to GHCR
+    - name: Log in to GHCR
+      uses: docker/login-action@v3
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
     - name: Build without cache and push docker image
       id: build-image
-      uses: DFE-Digital/github-actions/build-docker-image@master
+      uses: docker/build-push-action@v5
       with:
+        context: ${{ github.workspace }}
+        file: ${{ github.workspace }}/src/API/Dockerfile
+        push: true
+        tags: ${{ env.DOCKER_REPOSITORY }}:${{ github.sha }}
         github-token: ${{ secrets.GITHUB_TOKEN }}
-        context: .
         docker-repository: ${{ env.DOCKER_REPOSITORY }}
         max-cache: true
         reuse-cache: false
         snyk-token: ${{ secrets.SNYK_TOKEN }}
+        build-args: |
+          GITHUB_USERNAME=${{ github.actor }}
+        secrets: |
+          github_token=${{ secrets.GITHUB_TOKEN }}
 
     - name: Notify teams channel on job failure
       if: ${{ failure() }}
