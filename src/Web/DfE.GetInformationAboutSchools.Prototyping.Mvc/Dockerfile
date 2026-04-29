@@ -15,14 +15,11 @@ ARG BUILD_CONFIGURATION=Release
 
 WORKDIR /src
 
-# Copy only the MVC project file first
-COPY ["src/Web/DfE.GetInformationAboutSchools.Prototyping.Mvc/DfE.GetInformationAboutSchools.Prototyping.Mvc.csproj", "src/Web/DfE.GetInformationAboutSchools.Prototyping.Mvc/"]
+# Copy everything first so static assets are included
+COPY . .
 
 # Restore dependencies
 RUN dotnet restore "src/Web/DfE.GetInformationAboutSchools.Prototyping.Mvc/DfE.GetInformationAboutSchools.Prototyping.Mvc.csproj"
-
-# Copy the rest of the solution
-COPY . .
 
 # Build the MVC project
 WORKDIR "/src/src/Web/DfE.GetInformationAboutSchools.Prototyping.Mvc"
@@ -35,6 +32,7 @@ RUN dotnet build "DfE.GetInformationAboutSchools.Prototyping.Mvc.csproj" \
 # ============================================================
 FROM build AS publish
 ARG BUILD_CONFIGURATION=Release
+
 RUN dotnet publish "DfE.GetInformationAboutSchools.Prototyping.Mvc.csproj" \
     -c $BUILD_CONFIGURATION \
     -o /app/publish \
@@ -45,5 +43,8 @@ RUN dotnet publish "DfE.GetInformationAboutSchools.Prototyping.Mvc.csproj" \
 # ============================================================
 FROM base AS final
 WORKDIR /app
+
+# Copy published output including wwwroot
 COPY --from=publish /app/publish .
+
 ENTRYPOINT ["dotnet", "DfE.GetInformationAboutSchools.Prototyping.Mvc.dll"]

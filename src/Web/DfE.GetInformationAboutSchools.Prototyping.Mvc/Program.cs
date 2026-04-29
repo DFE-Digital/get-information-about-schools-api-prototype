@@ -1,4 +1,9 @@
+using Microsoft.AspNetCore.Hosting.StaticWebAssets;
+
 var builder = WebApplication.CreateBuilder(args);
+
+// NEEDED FOR DOCKER AS STYLES WEREN'T SHOWING
+StaticWebAssetsLoader.UseStaticWebAssets(builder.Environment, builder.Configuration);
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
