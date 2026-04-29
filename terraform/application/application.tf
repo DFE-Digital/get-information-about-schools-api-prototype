@@ -84,7 +84,9 @@ module "application_configuration" {
   # SECRET APP SETTINGS
   # -----------------------------
   secret_variables = {
-    CONNECTIONSTRINGS__EDUBASE = module.postgres.dotnet_connection_string
+    CONNECTIONSTRINGS__EDUBASE                  = module.postgres.dotnet_connection_string
+    DATABASE_URL                                = module.postgres.url
+    ConnectionStrings__PostgresConnectionString = module.postgres.dotnet_connection_string
   }
 }
 
