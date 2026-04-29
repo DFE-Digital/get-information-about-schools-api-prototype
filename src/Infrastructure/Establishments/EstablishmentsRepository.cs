@@ -229,14 +229,14 @@ public sealed class EstablishmentsRepository : IEstablishmentsRepository
 
 
     public async Task<EstablishmentFilterSearchResponse> SearchFilteredAsync(
-    EstablishmentFilterCriteria criteria,
-    double similarityThreshold,
-    CancellationToken cancellationToken)
+        EstablishmentFilterCriteria criteria,
+        double similarityThreshold,
+        CancellationToken cancellationToken)
     {
         int offset = (criteria.PageNumber - 1) * criteria.PageSize;
 
         //
-        // FILTER‑ONLY SQL (no fuzzy logic, no text search)
+        // FILTER‑ONLY SQL (no fuzzy logic, no count, no facets)
         //
         const string FilteredSql =
             """
@@ -264,40 +264,6 @@ public sealed class EstablishmentsRepository : IEstablishmentsRepository
         OFFSET @Offset LIMIT @PageSize;
         """;
 
-        //
-        // COUNT SQL (filters only)
-        //
-        const string CountSql =
-            """
-        SELECT COUNT(*)
-        FROM Establishment AS e
-        INNER JOIN EstablishmentType et ON e.EstablishmentTypeId = et.id
-        INNER JOIN EducationPhase ep ON e.EducationPhaseId = ep.id
-        INNER JOIN EstablishmentStatus es ON e.EstablishmentStatusId = es.id
-        WHERE
-            (@Status IS NULL OR es.name = @Status)
-            AND (@Type IS NULL OR et.name = @Type);
-        """;
-
-        //
-        // FACETS (unchanged)
-        //
-        const string StatusFacetSql =
-            """
-        SELECT es.name AS Key, COUNT(*) AS Count
-        FROM Establishment e
-        INNER JOIN EstablishmentStatus es ON e.EstablishmentStatusId = es.id
-        GROUP BY es.name;
-        """;
-
-        const string TypeFacetSql =
-            """
-        SELECT et.name AS Key, COUNT(*) AS Count
-        FROM Establishment e
-        INNER JOIN EstablishmentType et ON e.EstablishmentTypeId = et.id
-        GROUP BY et.name;
-        """;
-
         var parameters = new
         {
             Status = criteria.Status,
@@ -307,7 +273,7 @@ public sealed class EstablishmentsRepository : IEstablishmentsRepository
         };
 
         //
-        // 1. Filtered results
+        // 1. Filtered results only
         //
         var dtos = await _sqlReader.QueryAsync<EstablishmentDataTransferObject>(
             FilteredSql,
@@ -317,35 +283,18 @@ public sealed class EstablishmentsRepository : IEstablishmentsRepository
         var results = _establishmentsMapper.Map(dtos);
 
         //
-        // 2. Total count
+        // 2. Return with placeholder count + empty facets
         //
-        int totalCount = await _sqlReader.QuerySingleAsync<int>(
-            CountSql,
-            parameters,
-            cancellationToken);
-
-        //
-        // 3. Facets
-        //
-        var statusRows = await _sqlReader.QueryAsync<(string Key, int Count)>(
-            StatusFacetSql,
-            null,
-            cancellationToken);
-
-        var typeRows = await _sqlReader.QueryAsync<(string Key, int Count)>(
-            TypeFacetSql,
-            null,
-            cancellationToken);
-
         return new EstablishmentFilterSearchResponse
         {
             Results = results,
-            TotalCount = totalCount,
+            TotalCount = 0, // intentionally not calculated
             Facets = new EstablishmentFacetCounts
             {
-                StatusCounts = statusRows.ToDictionary(x => x.Key, x => x.Count),
-                TypeCounts = typeRows.ToDictionary(x => x.Key, x => x.Count)
+                StatusCounts = new Dictionary<string, int>(),
+                TypeCounts = new Dictionary<string, int>()
             }
         };
     }
+
 }
