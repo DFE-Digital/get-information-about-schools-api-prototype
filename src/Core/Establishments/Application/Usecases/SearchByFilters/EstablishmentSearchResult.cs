@@ -23,12 +23,12 @@ namespace DfE.GetInformationAboutSchools.Prototyping.Core.Establishments.Applica
 
         public static SearchEstablishmentsRequest Fuzzy(
             string term,
-            double threshold = 0.2) =>
+            double threshold = 0.6) =>
             new(term, null, threshold);
 
         public static SearchEstablishmentsRequest Filtered(
             EstablishmentFilterCriteria criteria,
-            double threshold = 0.2) =>
+            double threshold = 0.6) =>
             new(null, criteria, threshold);
     }
 

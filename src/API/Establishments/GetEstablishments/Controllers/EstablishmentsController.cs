@@ -179,9 +179,9 @@ public sealed class EstablishmentsController : ControllerBase
     [FromQuery] string term,
     CancellationToken cancellationToken = default)
     {
-        var request = SearchEstablishmentsRequest.Fuzzy(term);
-
-        var result = await _searchUseCase.HandleRequestAsync(request, cancellationToken);
+        SearchEstablishmentsRequest request = SearchEstablishmentsRequest.Fuzzy(term);
+        UseCaseResponse<SearchEstablishmentsResponse> result = await _searchUseCase
+            .HandleRequestAsync(request, cancellationToken);
 
         if (!result.SuccessfulRequest)
         {

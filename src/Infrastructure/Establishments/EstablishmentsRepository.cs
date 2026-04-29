@@ -132,10 +132,10 @@ public sealed class EstablishmentsRepository : IEstablishmentsRepository
 
 
     public async Task<IReadOnlyCollection<Establishment>> SearchFuzzyAsync(
-     string term,
-     double similarityThreshold,
-     int limit,
-     CancellationToken cancellationToken)
+    string term,
+    double similarityThreshold,
+    int limit,
+    CancellationToken cancellationToken)
     {
         const string Sql =
             """
@@ -155,17 +155,45 @@ public sealed class EstablishmentsRepository : IEstablishmentsRepository
         INNER JOIN EducationPhase ep ON e.EducationPhaseId = ep.id
         INNER JOIN EstablishmentStatus es ON e.EstablishmentStatusId = es.id
         WHERE
-            e.URN = @Term
-            OR word_similarity (e.EstablishmentName, @Term) >= @Threshold
-            OR word_similarity (e.Town, @Term) >= @Threshold
+            -- URN exact match
+            CAST(e.URN AS TEXT) = @Term
+
+            -- URN prefix match
+            OR CAST(e.URN AS TEXT) LIKE @Term || '%'
+
+            -- URN fuzzy match
+            OR word_similarity(CAST(e.URN AS TEXT), @Term) >= @Threshold
+
+            -- Name fuzzy match
+            OR word_similarity(e.EstablishmentName, @Term) >= @Threshold
+
+            -- Town fuzzy match
+            OR word_similarity(e.Town, @Term) >= @Threshold
         ORDER BY
-            CASE WHEN e.URN = @Term THEN 1 ELSE 0 END DESC,
-            word_similarity (e.EstablishmentName, @Term) DESC,
-            word_similarity (e.Town, @Term) DESC
+            -- 1. Exact URN match
+            (CAST(e.URN AS TEXT) = @Term)::int DESC,
+
+            -- 2. URN prefix match
+            (CAST(e.URN AS TEXT) LIKE @Term || '%')::int DESC,
+
+            -- 3. Exact name match
+            (LOWER(e.EstablishmentName) = LOWER(@Term))::int DESC,
+
+            -- 4. Name prefix match
+            (LOWER(e.EstablishmentName) LIKE LOWER(@Term) || '%')::int DESC,
+
+            -- 5. URN fuzzy similarity
+            word_similarity(CAST(e.URN AS TEXT), @Term) DESC,
+
+            -- 6. Name fuzzy similarity
+            word_similarity(e.EstablishmentName, @Term) DESC,
+
+            -- 7. Town fuzzy similarity
+            word_similarity(e.Town, @Term) DESC
         LIMIT @Limit;
         """;
 
-        IEnumerable<EstablishmentDataTransferObject> dtos = await _sqlReader.QueryAsync<EstablishmentDataTransferObject>(
+        var dtos = await _sqlReader.QueryAsync<EstablishmentDataTransferObject>(
             Sql,
             new
             {
@@ -177,6 +205,8 @@ public sealed class EstablishmentsRepository : IEstablishmentsRepository
 
         return _establishmentsMapper.Map(dtos);
     }
+
+
 
 
 
@@ -308,8 +338,4 @@ public sealed class EstablishmentsRepository : IEstablishmentsRepository
             }
         };
     }
-
-
-
-
 }
