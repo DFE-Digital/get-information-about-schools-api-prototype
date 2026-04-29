@@ -256,8 +256,8 @@ public sealed class EstablishmentsRepository : IEstablishmentsRepository
         INNER JOIN EducationPhase ep ON e.EducationPhaseId = ep.id
         INNER JOIN EstablishmentStatus es ON e.EstablishmentStatusId = es.id
         WHERE
-            (@Status IS NULL OR es.name = @Status)
-            AND (@Type IS NULL OR et.name = @Type)
+            (@Status IS NULL OR es.name ILIKE @Status)
+            AND (@Type IS NULL OR et.name ILIKE @Type)
         ORDER BY 
             e.EstablishmentName ASC,
             e.URN ASC

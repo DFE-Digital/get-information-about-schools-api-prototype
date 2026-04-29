@@ -86,13 +86,16 @@ $sql += @"
 -- Lookup table seed data
 
 INSERT INTO EstablishmentType (name) VALUES
+('Academy'),
+('Community school'),
 ('Voluntary aided school'),
 ('British schools overseas')
 ON CONFLICT DO NOTHING;
 
 INSERT INTO EducationPhase (name) VALUES
 ('Primary'),
-('Not applicable')
+('Secondary'),
+('Special')
 ON CONFLICT DO NOTHING;
 
 INSERT INTO EstablishmentStatus (name) VALUES
@@ -124,15 +127,23 @@ $estRows = @()
 
 for ($i = 1; $i -le $establishmentCount; $i++) {
 
-    $urn = 100000 + $i
+    $urn = 100000 + $i  # Always 6 digits
 
-    # Escape all SQL strings
     $name = Escape-SqlLiteral (Get-RandomSchoolName)
     $street = Escape-SqlLiteral (Get-RandomStreet)
     $town = Escape-SqlLiteral (Get-RandomTown)
     $postcode = Escape-SqlLiteral (Get-RandomPostcode)
 
-    $estRows += "($urn, '$name', 1, 1, NULL, NULL, '$street', '$town', '$postcode', 2)"
+    # Random type (1–7)
+    $typeId = Get-Random -Minimum 1 -Maximum 4
+
+    # Random phase (1–6)
+    $phaseId = Get-Random -Minimum 1 -Maximum 3
+
+    # Weighted status: 80% Open (2), 20% Closed (1)
+    $statusId = if ((Get-Random -Minimum 1 -Maximum 100) -le 80) { 2 } else { 1 }
+
+    $estRows += "($urn, '$name', $typeId, $phaseId, NULL, NULL, '$street', '$town', '$postcode', $statusId)"
 }
 
 $sql += ($estRows -join ",`n") + ";"
