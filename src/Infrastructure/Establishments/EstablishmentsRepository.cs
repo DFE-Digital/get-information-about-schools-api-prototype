@@ -143,63 +143,83 @@ public sealed class EstablishmentsRepository : IEstablishmentsRepository
             e.URN,
             e.EstablishmentName,
             et.name AS EstablishmentType,
-            ep.name AS EducationPhase,
-            e.SchoolWebsite,
-            e.TelephoneNum,
+            es.name AS EstablishmentStatus,
             e.Street,
             e.Town,
             e.Postcode,
-            es.name AS EstablishmentStatus
+            e.SchoolWebsite,
+            e.TelephoneNum,
+
+            -- Combined rank score (like your old query)
+            GREATEST(
+                word_similarity(e.EstablishmentName, @term),
+                word_similarity(e.Town, @term),
+                word_similarity(CAST(e.URN AS TEXT), @term)
+            ) AS rank
+
         FROM Establishment AS e
         INNER JOIN EstablishmentType et ON e.EstablishmentTypeId = et.id
-        INNER JOIN EducationPhase ep ON e.EducationPhaseId = ep.id
         INNER JOIN EstablishmentStatus es ON e.EstablishmentStatusId = es.id
+
         WHERE
             -- URN exact match
-            CAST(e.URN AS TEXT) = @Term
+            CAST(e.URN AS TEXT) = @term
 
             -- URN prefix match
-            OR CAST(e.URN AS TEXT) LIKE @Term || '%'
+            OR CAST(e.URN AS TEXT) LIKE @term || '%'
 
-            -- URN fuzzy match
-            OR word_similarity(CAST(e.URN AS TEXT), @Term) >= @Threshold
+            -- Name substring match
+            OR e.EstablishmentName ILIKE '%' || @term || '%'
 
-            -- Name fuzzy match
-            OR word_similarity(e.EstablishmentName, @Term) >= @Threshold
+            -- Town substring match
+            OR e.Town ILIKE '%' || @term || '%'
 
-            -- Town fuzzy match
-            OR word_similarity(e.Town, @Term) >= @Threshold
+            -- Fuzzy name match
+            OR e.EstablishmentName % @term
+
+            -- Fuzzy town match
+            OR e.Town % @term
+
+            -- Fuzzy URN match (threshold)
+            OR word_similarity(CAST(e.URN AS TEXT), @term) >= @threshold
+
+            -- Fuzzy name match (threshold)
+            OR word_similarity(e.EstablishmentName, @term) >= @threshold
+
+            -- Fuzzy town match (threshold)
+            OR word_similarity(e.Town, @term) >= @threshold
+
         ORDER BY
-            -- 1. Exact URN match
-            (CAST(e.URN AS TEXT) = @Term)::int DESC,
+            -- Highest priority: exact URN
+            (CAST(e.URN AS TEXT) = @term)::int DESC,
 
-            -- 2. URN prefix match
-            (CAST(e.URN AS TEXT) LIKE @Term || '%')::int DESC,
+            -- Next: URN prefix
+            (CAST(e.URN AS TEXT) LIKE @term || '%')::int DESC,
 
-            -- 3. Exact name match
-            (LOWER(e.EstablishmentName) = LOWER(@Term))::int DESC,
+            -- Next: exact name match
+            (LOWER(e.EstablishmentName) = LOWER(@term))::int DESC,
 
-            -- 4. Name prefix match
-            (LOWER(e.EstablishmentName) LIKE LOWER(@Term) || '%')::int DESC,
+            -- Next: name prefix match
+            (LOWER(e.EstablishmentName) LIKE LOWER(@term) || '%')::int DESC,
 
-            -- 5. URN fuzzy similarity
-            word_similarity(CAST(e.URN AS TEXT), @Term) DESC,
+            -- Next: combined rank score
+            rank DESC,
 
-            -- 6. Name fuzzy similarity
-            word_similarity(e.EstablishmentName, @Term) DESC,
+            -- Tie‑breakers
+            e.EstablishmentName ASC,
+            e.URN ASC
 
-            -- 7. Town fuzzy similarity
-            word_similarity(e.Town, @Term) DESC
-        LIMIT @Limit;
+        LIMIT @limit;
+        
         """;
 
         var dtos = await _sqlReader.QueryAsync<EstablishmentDataTransferObject>(
             Sql,
             new
             {
-                Term = term,
-                Threshold = similarityThreshold,
-                Limit = limit
+                term,
+                threshold = similarityThreshold,
+                limit
             },
             cancellationToken);
 
@@ -208,15 +228,16 @@ public sealed class EstablishmentsRepository : IEstablishmentsRepository
 
 
 
-
-
     public async Task<EstablishmentFilterSearchResponse> SearchFilteredAsync(
-     EstablishmentFilterCriteria criteria,
-     double similarityThreshold,
-     CancellationToken cancellationToken)
+    EstablishmentFilterCriteria criteria,
+    double similarityThreshold,
+    CancellationToken cancellationToken)
     {
         int offset = (criteria.PageNumber - 1) * criteria.PageSize;
 
+        //
+        // FILTER‑ONLY SQL (no fuzzy logic, no text search)
+        //
         const string FilteredSql =
             """
         SELECT
@@ -237,15 +258,15 @@ public sealed class EstablishmentsRepository : IEstablishmentsRepository
         WHERE
             (@Status IS NULL OR es.name = @Status)
             AND (@Type IS NULL OR et.name = @Type)
-            AND (
-                @Text IS NULL
-                OR similarity(e.EstablishmentName, @Text) >= @Threshold
-                OR similarity(e.Town, @Text) >= @Threshold
-            )
-        ORDER BY e.EstablishmentName ASC
+        ORDER BY 
+            e.EstablishmentName ASC,
+            e.URN ASC
         OFFSET @Offset LIMIT @PageSize;
         """;
 
+        //
+        // COUNT SQL (filters only)
+        //
         const string CountSql =
             """
         SELECT COUNT(*)
@@ -255,14 +276,12 @@ public sealed class EstablishmentsRepository : IEstablishmentsRepository
         INNER JOIN EstablishmentStatus es ON e.EstablishmentStatusId = es.id
         WHERE
             (@Status IS NULL OR es.name = @Status)
-            AND (@Type IS NULL OR et.name = @Type)
-            AND (
-                @Text IS NULL
-                OR similarity(e.EstablishmentName, @Text) >= @Threshold
-                OR similarity(e.Town, @Text) >= @Threshold
-            );
+            AND (@Type IS NULL OR et.name = @Type);
         """;
 
+        //
+        // FACETS (unchanged)
+        //
         const string StatusFacetSql =
             """
         SELECT es.name AS Key, COUNT(*) AS Count
@@ -283,8 +302,6 @@ public sealed class EstablishmentsRepository : IEstablishmentsRepository
         {
             Status = criteria.Status,
             Type = criteria.Type,
-            Text = criteria.Text,
-            Threshold = similarityThreshold,
             Offset = offset,
             PageSize = criteria.PageSize
         };
@@ -308,24 +325,17 @@ public sealed class EstablishmentsRepository : IEstablishmentsRepository
             cancellationToken);
 
         //
-        // 3. Status facet
+        // 3. Facets
         //
         var statusRows = await _sqlReader.QueryAsync<(string Key, int Count)>(
             StatusFacetSql,
             null,
             cancellationToken);
 
-        var statusFacet = statusRows.ToDictionary(x => x.Key, x => x.Count);
-
-        //
-        // 4. Type facet
-        //
         var typeRows = await _sqlReader.QueryAsync<(string Key, int Count)>(
             TypeFacetSql,
             null,
             cancellationToken);
-
-        var typeFacet = typeRows.ToDictionary(x => x.Key, x => x.Count);
 
         return new EstablishmentFilterSearchResponse
         {
@@ -333,8 +343,8 @@ public sealed class EstablishmentsRepository : IEstablishmentsRepository
             TotalCount = totalCount,
             Facets = new EstablishmentFacetCounts
             {
-                StatusCounts = statusFacet,
-                TypeCounts = typeFacet
+                StatusCounts = statusRows.ToDictionary(x => x.Key, x => x.Count),
+                TypeCounts = typeRows.ToDictionary(x => x.Key, x => x.Count)
             }
         };
     }

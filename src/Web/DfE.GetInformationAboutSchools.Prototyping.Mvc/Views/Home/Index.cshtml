@@ -1,8 +1,89 @@
 ﻿@{
-    ViewData["Title"] = "Home Page";
+    ViewData["Title"] = "Type‑Ahead Search Test";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+<div class="container mt-5" style="max-width: 650px;">
+    <h2 class="mb-3">Search Establishments</h2>
+    <p class="text-muted mb-4">
+        Start typing a <strong>URN</strong>, <strong>school name</strong>, or <strong>location</strong>.
+    </p>
+
+    <div class="position-relative">
+        <input id="searchBox"
+               type="text"
+               class="form-control form-control-lg"
+               placeholder="e.g. 10566, Riverdale, London"
+               autocomplete="off" />
+
+        <div id="resultsContainer"
+             class="position-absolute w-100 shadow-sm"
+             style="top: 100%; left: 0; z-index: 2000; display: none;">
+            <ul id="results"
+                class="list-group rounded-0"
+                style="max-height: 300px; overflow-y: auto;">
+            </ul>
+        </div>
+    </div>
 </div>
+
+@section Scripts {
+    <script>
+        const searchBox = document.getElementById("searchBox");
+        const resultsContainer = document.getElementById("resultsContainer");
+        const results = document.getElementById("results");
+        let debounceTimer = null;
+
+        searchBox.addEventListener("input", () => {
+            const term = searchBox.value.trim();
+
+            clearTimeout(debounceTimer);
+
+            if (term.length === 0) {
+                resultsContainer.style.display = "none";
+                results.innerHTML = "";
+                return;
+            }
+
+            debounceTimer = setTimeout(() => {
+                fetch(`/typeahead?term=${encodeURIComponent(term)}`)
+                    .then(r => r.json())
+                    .then(data => {
+                        results.innerHTML = "";
+
+                        if (!data || data.length === 0) {
+                            resultsContainer.style.display = "none";
+                            return;
+                        }
+
+                        data.forEach(item => {
+                            const li = document.createElement("li");
+                            li.className = "list-group-item list-group-item-action py-2";
+
+                            li.innerHTML = `
+                                <div class="fw-bold">${item.establishmentName}</div>
+                                <div class="text-muted small">
+                                    URN: ${item.urn} &nbsp;•&nbsp; ${item.town ?? ""}
+                                </div>
+                            `;
+
+                            li.addEventListener("click", () => {
+                                searchBox.value = item.establishmentName;
+                                resultsContainer.style.display = "none";
+                            });
+
+                            results.appendChild(li);
+                        });
+
+                        resultsContainer.style.display = "block";
+                    });
+            }, 200);
+        });
+
+        // Hide dropdown when clicking outside
+        document.addEventListener("click", (e) => {
+            if (!resultsContainer.contains(e.target) && e.target !== searchBox) {
+                resultsContainer.style.display = "none";
+            }
+        });
+    </script>
+}
