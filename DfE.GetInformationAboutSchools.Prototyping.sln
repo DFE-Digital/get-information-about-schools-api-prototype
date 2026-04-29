@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 17
-VisualStudioVersion = 17.14.36908.2
+# Visual Studio Version 18
+VisualStudioVersion = 18.5.11716.220 stable
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DfE.GetInformationAboutSchools.Prototyping.Core", "src\Core\DfE.GetInformationAboutSchools.Prototyping.Core.csproj", "{108E63A1-F5DC-60A5-5D2F-0AA9C14FB835}"
 EndProject
@@ -20,6 +20,8 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DfE.GetInformationAboutSchools.Prototyping.Infra.Tests", "tests\Unit\Infrastructure\DfE.GetInformationAboutSchools.Prototyping.Infra.Tests.csproj", "{53E92001-B94C-FF6D-147C-4781A5467966}"
 EndProject
 Project("{E53339B2-1760-4266-BCC7-CA923CBCF16C}") = "docker-compose", "docker-compose.dcproj", "{81DDED9D-158B-E303-5F62-77A2896D2A5A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DfE.GetInformationAboutSchools.Prototyping.Mvc", "src\Web\DfE.GetInformationAboutSchools.Prototyping.Mvc\DfE.GetInformationAboutSchools.Prototyping.Mvc.csproj", "{1CDD779F-CC84-4994-A25A-E76591C00FE8}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -55,6 +57,10 @@ Global
 		{81DDED9D-158B-E303-5F62-77A2896D2A5A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{81DDED9D-158B-E303-5F62-77A2896D2A5A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{81DDED9D-158B-E303-5F62-77A2896D2A5A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1CDD779F-CC84-4994-A25A-E76591C00FE8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1CDD779F-CC84-4994-A25A-E76591C00FE8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1CDD779F-CC84-4994-A25A-E76591C00FE8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1CDD779F-CC84-4994-A25A-E76591C00FE8}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
