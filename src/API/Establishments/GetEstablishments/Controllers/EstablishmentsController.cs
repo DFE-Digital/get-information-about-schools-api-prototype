@@ -6,6 +6,7 @@ using DfE.GetInformationAboutSchools.Prototyping.API.Shared.Response.Mappers;
 using DfE.GetInformationAboutSchools.Prototyping.Core.Establishments.Application.Model;
 using DfE.GetInformationAboutSchools.Prototyping.Core.Establishments.Application.Usecases.GetEstablishment.Request;
 using DfE.GetInformationAboutSchools.Prototyping.Core.Establishments.Application.Usecases.GetEstablishments.Request;
+using DfE.GetInformationAboutSchools.Prototyping.Core.Establishments.Application.Usecases.SearchByFilters;
 using DfE.GetInformationAboutSchools.Prototyping.Core.Shared.Application.Usecases;
 using Microsoft.AspNetCore.Mvc;
 using System.Runtime.CompilerServices;
@@ -27,6 +28,10 @@ public sealed class EstablishmentsController : ControllerBase
     private readonly ICsvResponseBuilder _csvResponseBuilder;
     private readonly ICsvMapper<Establishment> _modelToCsvMapper;
 
+    private readonly IUseCase<
+    SearchEstablishmentsRequest,
+    UseCaseResponse<SearchEstablishmentsResponse>> _searchUseCase;
+
     public EstablishmentsController(
         ILogger<EstablishmentsController> logger,
         IUseCase<
@@ -37,7 +42,10 @@ public sealed class EstablishmentsController : ControllerBase
              UseCaseResponse<Establishment>> getEstablishmentUseCase,
         ICsvResponseBuilder csvResponseBuilder,
         IMapper<Establishment, object?> modelToViewModelMapper,
-        ICsvMapper<Establishment> modelToCsvMapper)
+        ICsvMapper<Establishment> modelToCsvMapper,
+        IUseCase<
+    SearchEstablishmentsRequest,
+    UseCaseResponse<SearchEstablishmentsResponse>> searchUseCase)
     {
         _logger = logger;
         _getEstablishmentUseCase = getEstablishmentUseCase;
@@ -45,6 +53,8 @@ public sealed class EstablishmentsController : ControllerBase
         _csvResponseBuilder = csvResponseBuilder;
         _modelToViewModelMapper = modelToViewModelMapper;
         _modelToCsvMapper = modelToCsvMapper;
+        _searchUseCase = searchUseCase;
+
     }
 
     [HttpGet("health", Name = "HealthCheck")]
@@ -161,4 +171,80 @@ public sealed class EstablishmentsController : ControllerBase
             fileName: "establishments.csv",
             cancellationToken);
     }
+
+
+
+    [HttpGet("search/fuzzy", Name = "SearchEstablishmentsFuzzy")]
+    public async Task<IActionResult> SearchFuzzy(
+    [FromQuery] string term,
+    CancellationToken cancellationToken = default)
+    {
+        var request = SearchEstablishmentsRequest.Fuzzy(term);
+
+        var result = await _searchUseCase.HandleRequestAsync(request, cancellationToken);
+
+        if (!result.SuccessfulRequest)
+        {
+            return Problem(
+                detail: result.ErrorMessage ?? "Unknown error",
+                statusCode: StatusCodes.Status500InternalServerError);
+        }
+
+        if (result.Model?.Fuzzy?.Results is null)
+        {
+            return NotFound("No establishments matched the fuzzy search.");
+        }
+
+        var mapped = result.Model.Fuzzy.Results
+            .Select(e => _modelToViewModelMapper.Map(e));
+
+        return Ok(mapped);
+    }
+
+    [HttpGet("search/filtered", Name = "SearchEstablishmentsFiltered")]
+    public async Task<IActionResult> SearchFiltered(
+    [FromQuery] string? status,
+    [FromQuery] string? type,
+    [FromQuery] string? text,
+    [FromQuery] int pageNumber = 1,
+    [FromQuery] int pageSize = 20,
+    CancellationToken cancellationToken = default)
+    {
+        var criteria = new EstablishmentFilterCriteria
+        {
+            Status = status,
+            Type = type,
+            Text = text,
+            PageNumber = pageNumber,
+            PageSize = pageSize
+        };
+
+        var request = SearchEstablishmentsRequest.Filtered(criteria);
+
+        var result = await _searchUseCase.HandleRequestAsync(request, cancellationToken);
+
+        if (!result.SuccessfulRequest)
+        {
+            return Problem(
+                detail: result.ErrorMessage ?? "Unknown error",
+                statusCode: StatusCodes.Status500InternalServerError);
+        }
+
+        if (result.Model?.Filtered?.Results is null)
+        {
+            return NotFound("No establishments matched the filtered search.");
+        }
+
+        var mapped = result.Model.Filtered.Results
+            .Select(e => _modelToViewModelMapper.Map(e));
+
+        return Ok(new
+        {
+            results = mapped,
+            totalCount = result.Model.Filtered.TotalCount,
+            facets = result.Model.Filtered.Facets
+        });
+    }
+
+
 }

@@ -1,4 +1,5 @@
 ﻿using DfE.GetInformationAboutSchools.Prototyping.Core.Establishments.Application.Model;
+using DfE.GetInformationAboutSchools.Prototyping.Core.Establishments.Application.Usecases.SearchByFilters;
 
 namespace DfE.GetInformationAboutSchools.Prototyping.Core.Establishments.Infrastructure;
 
@@ -49,4 +50,17 @@ public interface IEstablishmentsRepository
     Task<Establishment> GetEstablishment(
         int urn,
         CancellationToken cancellationToken = default);
+
+
+
+    Task<IReadOnlyCollection<Establishment>> SearchFuzzyAsync(
+        string term,
+        double similarityThreshold,
+        int limit,
+        CancellationToken cancellationToken);
+
+    Task<EstablishmentFilterSearchResponse> SearchFilteredAsync(
+        EstablishmentFilterCriteria criteria,
+        double similarityThreshold,
+        CancellationToken cancellationToken);
 }
