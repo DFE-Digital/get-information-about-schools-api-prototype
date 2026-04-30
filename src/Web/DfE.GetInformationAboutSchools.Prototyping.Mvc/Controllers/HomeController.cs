@@ -20,12 +20,11 @@ namespace DfE.GetInformationAboutSchools.Prototyping.Mvc.Controllers
             _searchUseCase = searchUseCase;
         }
 
-        public IActionResult Index()
-        {
-            return View();
-        }
+        public IActionResult Index() => View();
 
-        // This is the endpoint your JS will call for autocomplete
+        // -------------------------------
+        // FUZZY TYPEAHEAD ENDPOINT
+        // -------------------------------
         [HttpGet("/typeahead")]
         public async Task<IActionResult> TypeAhead([FromQuery] string term, CancellationToken cancellationToken)
         {
@@ -39,13 +38,61 @@ namespace DfE.GetInformationAboutSchools.Prototyping.Mvc.Controllers
             if (!result.SuccessfulRequest || result.Model?.Fuzzy?.Results is null)
                 return Ok(Array.Empty<object>());
 
-            // Return a simple JSON projection
             var response = result.Model.Fuzzy.Results.Select(e => new
             {
                 urn = e.Identifier.Urn,
                 establishmentName = e.BasicDetails.Name,
                 town = e.Address.Town
             });
+
+            return Ok(response);
+        }
+
+        // -------------------------------
+        // FILTERED SEARCH ENDPOINT
+        // -------------------------------
+        [HttpGet("/filtered")]
+        public async Task<IActionResult> Filtered(
+            [FromQuery] string[]? statuses,
+            [FromQuery] string[]? types,
+            [FromQuery] int pageNumber = 1,
+            [FromQuery] int pageSize = 20,
+            CancellationToken cancellationToken = default)
+        {
+            var criteria = new EstablishmentFilterCriteria
+            {
+                Statuses = statuses,
+                Types = types,
+                PageNumber = pageNumber,
+                PageSize = pageSize
+            };
+
+            var request = SearchEstablishmentsRequest.Filtered(criteria);
+
+            var result = await _searchUseCase.HandleRequestAsync(request, cancellationToken);
+
+            if (!result.SuccessfulRequest || result.Model?.Filtered?.Results is null)
+            {
+                return Ok(new
+                {
+                    results = Array.Empty<object>(),
+                    totalCount = 0
+                });
+            }
+
+            var response = new
+            {
+                results = result.Model.Filtered.Results.Select(e => new
+                {
+                    urn = e.Identifier.Urn,
+                    name = e.BasicDetails.Name,
+                    type = e.BasicDetails.EstablishmentType,
+                    phase = e.BasicDetails.PhaseOfEducation,
+                    status = e.BasicDetails.Status,
+                    town = e.Address.Town
+                }),
+                totalCount = result.Model.Filtered.TotalCount
+            };
 
             return Ok(response);
         }

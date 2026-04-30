@@ -132,10 +132,10 @@ public sealed class EstablishmentsRepository : IEstablishmentsRepository
 
 
     public async Task<IReadOnlyCollection<Establishment>> SearchFuzzyAsync(
-    string term,
-    double similarityThreshold,
-    int limit,
-    CancellationToken cancellationToken)
+        string term,
+        double similarityThreshold,
+        int limit,
+        CancellationToken cancellationToken)
     {
         const string Sql =
             """
@@ -148,79 +148,38 @@ public sealed class EstablishmentsRepository : IEstablishmentsRepository
             e.Town,
             e.Postcode,
             e.SchoolWebsite,
-            e.TelephoneNum,
-
-            -- Combined rank score (like your old query)
-            GREATEST(
-                word_similarity(e.EstablishmentName, @term),
-                word_similarity(e.Town, @term),
-                word_similarity(CAST(e.URN AS TEXT), @term)
-            ) AS rank
+            e.TelephoneNum
 
         FROM Establishment AS e
         INNER JOIN EstablishmentType et ON e.EstablishmentTypeId = et.id
         INNER JOIN EstablishmentStatus es ON e.EstablishmentStatusId = es.id
 
         WHERE
-            -- URN exact match
-            CAST(e.URN AS TEXT) = @term
-
-            -- URN prefix match
-            OR CAST(e.URN AS TEXT) LIKE @term || '%'
-
-            -- Name substring match
-            OR e.EstablishmentName ILIKE '%' || @term || '%'
-
-            -- Town substring match
-            OR e.Town ILIKE '%' || @term || '%'
-
-            -- Fuzzy name match
-            OR e.EstablishmentName % @term
-
-            -- Fuzzy town match
-            OR e.Town % @term
-
-            -- Fuzzy URN match (threshold)
-            OR word_similarity(CAST(e.URN AS TEXT), @term) >= @threshold
-
-            -- Fuzzy name match (threshold)
-            OR word_similarity(e.EstablishmentName, @term) >= @threshold
-
-            -- Fuzzy town match (threshold)
-            OR word_similarity(e.Town, @term) >= @threshold
+            (
+                -- NUMERIC MODE: URN prefix only
+                @term ~ '^[0-9]+$'
+                AND CAST(e.URN AS TEXT) LIKE @term || '%'
+            )
+            OR
+            (
+                -- TEXT MODE: substring + fuzzy
+                @term !~ '^[0-9]+$'
+                AND (
+                    e.EstablishmentName ILIKE '%' || @term || '%'
+                    OR e.Town ILIKE '%' || @term || '%'
+                    OR e.EstablishmentName % @term
+                    OR e.Town % @term
+                )
+            )
 
         ORDER BY
-            -- Highest priority: exact URN
-            (CAST(e.URN AS TEXT) = @term)::int DESC,
-
-            -- Next: URN prefix
-            (CAST(e.URN AS TEXT) LIKE @term || '%')::int DESC,
-
-            -- Next: exact name match
-            (LOWER(e.EstablishmentName) = LOWER(@term))::int DESC,
-
-            -- Next: name prefix match
-            (LOWER(e.EstablishmentName) LIKE LOWER(@term) || '%')::int DESC,
-
-            -- Next: combined rank score
-            rank DESC,
-
-            -- Tie‑breakers
-            e.EstablishmentName ASC,
             e.URN ASC
-
         LIMIT @limit;
-        
         """;
 
         var dtos = await _sqlReader.QueryAsync<EstablishmentDataTransferObject>(
             Sql,
-            new
-            {
-                term,
-                threshold = similarityThreshold,
-                limit
-            },
+            new { term, threshold = similarityThreshold, limit },
             cancellationToken);
 
         return _establishmentsMapper.Map(dtos);
@@ -229,17 +188,14 @@ public sealed class EstablishmentsRepository : IEstablishmentsRepository
 
 
     public async Task<EstablishmentFilterSearchResponse> SearchFilteredAsync(
-        EstablishmentFilterCriteria criteria,
-        double similarityThreshold,
-        CancellationToken cancellationToken)
+    EstablishmentFilterCriteria criteria,
+    double similarityThreshold,
+    CancellationToken cancellationToken)
     {
         int offset = (criteria.PageNumber - 1) * criteria.PageSize;
 
-        //
-        // FILTER‑ONLY SQL (no fuzzy logic, no count, no facets)
-        //
         const string FilteredSql =
-            """
+        """
         SELECT
             e.URN,
             e.EstablishmentName,
@@ -256,25 +212,34 @@ public sealed class EstablishmentsRepository : IEstablishmentsRepository
         INNER JOIN EducationPhase ep ON e.EducationPhaseId = ep.id
         INNER JOIN EstablishmentStatus es ON e.EstablishmentStatusId = es.id
         WHERE
-            (@Status IS NULL OR es.name ILIKE @Status)
-            AND (@Type IS NULL OR et.name ILIKE @Type)
+            (
+                @Statuses IS NULL
+                OR cardinality(@Statuses) = 0
+                OR es.name = ANY(@Statuses::text[])
+            )
+            AND
+            (
+                @Types IS NULL
+                OR cardinality(@Types) = 0
+                OR et.name = ANY(@Types::text[])
+            )
         ORDER BY 
             e.EstablishmentName ASC,
             e.URN ASC
         OFFSET @Offset LIMIT @PageSize;
         """;
 
+
+
+
         var parameters = new
         {
-            Status = criteria.Status,
-            Type = criteria.Type,
+            Statuses = criteria.Statuses?.ToArray(),
+            Types = criteria.Types?.ToArray(),
             Offset = offset,
             PageSize = criteria.PageSize
         };
 
-        //
-        // 1. Filtered results only
-        //
         var dtos = await _sqlReader.QueryAsync<EstablishmentDataTransferObject>(
             FilteredSql,
             parameters,
@@ -282,13 +247,10 @@ public sealed class EstablishmentsRepository : IEstablishmentsRepository
 
         var results = _establishmentsMapper.Map(dtos);
 
-        //
-        // 2. Return with placeholder count + empty facets
-        //
         return new EstablishmentFilterSearchResponse
         {
             Results = results,
-            TotalCount = 0, // intentionally not calculated
+            TotalCount = 0,
             Facets = new EstablishmentFacetCounts
             {
                 StatusCounts = new Dictionary<string, int>(),
@@ -296,5 +258,6 @@ public sealed class EstablishmentsRepository : IEstablishmentsRepository
             }
         };
     }
+
 
 }

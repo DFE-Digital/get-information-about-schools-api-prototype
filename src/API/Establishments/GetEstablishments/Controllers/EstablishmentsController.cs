@@ -203,8 +203,8 @@ public sealed class EstablishmentsController : ControllerBase
 
     [HttpGet("search/filtered", Name = "SearchEstablishmentsFiltered")]
     public async Task<IActionResult> SearchFiltered(
-    [FromQuery] string? status,
-    [FromQuery] string? type,
+    [FromQuery] string[]? statuses,
+    [FromQuery] string[]? types,
     [FromQuery] string? text,
     [FromQuery] int pageNumber = 1,
     [FromQuery] int pageSize = 20,
@@ -212,12 +212,12 @@ public sealed class EstablishmentsController : ControllerBase
     {
         var criteria = new EstablishmentFilterCriteria
         {
-            Status = status,
-            Type = type,
-            Text = text,
+            Statuses = statuses,
+            Types = types,
             PageNumber = pageNumber,
             PageSize = pageSize
         };
+
 
         var request = SearchEstablishmentsRequest.Filtered(criteria);
 

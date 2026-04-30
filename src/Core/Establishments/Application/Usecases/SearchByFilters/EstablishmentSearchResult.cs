@@ -41,8 +41,9 @@ namespace DfE.GetInformationAboutSchools.Prototyping.Core.Establishments.Applica
     public sealed class EstablishmentFilterCriteria
     {
         public string? Text { get; init; }
-        public string? Status { get; init; }
-        public string? Type { get; init; }
+        public IReadOnlyCollection<string>? Statuses { get; init; }
+        public IReadOnlyCollection<string>? Types { get; init; }
+
         public int PageNumber { get; init; } = 1;
         public int PageSize { get; init; } = 20;
     }
