@@ -75,12 +75,16 @@ variable "send_traffic_to_maintenance_page" {
   description = "During a maintenance operation, keep sending traffic to the maintenance page instead of resetting the ingress"
 }
 
-locals {
-  postgres_ssl_mode = var.enable_postgres_ssl ? "require" : "disable"
-
+variable "probe_path" {
+  type        = string
+  default     = "/establishments/health"
+  description = "Path for the liveness and startup probe. The probe can be disabled by setting this to null."
 }
 
 variable "enable_logit" { default = true }
 
+locals {
+  postgres_ssl_mode = var.enable_postgres_ssl ? "require" : "disable"
 
+}
 

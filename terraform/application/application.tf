@@ -106,7 +106,7 @@ module "web_application" {
   docker_image = var.docker_image
   enable_logit = true
   web_port     = 8080
-  probe_path   = "/establishments/health"
+  probe_path   = var.probe_path
 
   send_traffic_to_maintenance_page = var.send_traffic_to_maintenance_page
 }
