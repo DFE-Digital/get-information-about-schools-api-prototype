@@ -134,11 +134,11 @@ for ($i = 1; $i -le $establishmentCount; $i++) {
     $town = Escape-SqlLiteral (Get-RandomTown)
     $postcode = Escape-SqlLiteral (Get-RandomPostcode)
 
-    # Random type (1–7)
-    $typeId = Get-Random -Minimum 1 -Maximum 4
+    # Random type (1–4)
+    $typeId = Get-Random -Minimum 1 -Maximum 5
 
-    # Random phase (1–6)
-    $phaseId = Get-Random -Minimum 1 -Maximum 3
+    # Random phase (1–3)
+    $phaseId = Get-Random -Minimum 1 -Maximum 4
 
     # Weighted status: 80% Open (2), 20% Closed (1)
     $statusId = if ((Get-Random -Minimum 1 -Maximum 100) -le 80) { 2 } else { 1 }
