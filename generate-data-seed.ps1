@@ -1,4 +1,4 @@
-Write-Host "Generating dynamic SQL seed file..."
+Write-Host "Generating dynamic SQL seed file (optimised)..."
 
 # IMPORTANT: inside the container, /seed is the mounted folder
 $seedPath = "/seed/002-seed.sql"
@@ -9,158 +9,183 @@ if (!(Test-Path $folder)) {
     New-Item -ItemType Directory -Path $folder | Out-Null
 }
 
-# Escape SQL string literals safely
+# Escape SQL safely
 function Escape-SqlLiteral {
     param([string]$value)
     if ($null -eq $value) { return $null }
     return $value -replace '''', ''''''
 }
 
-$sql = @()
-$sql += "-- AUTO-GENERATED SEED FILE"
-$sql += "-- Generated: $(Get-Date -Format o)"
-$sql += ""
-
 # ============================
-# Helper functions for realism
+# FAST RANDOM GENERATORS
 # ============================
 
 function Get-RandomSchoolName {
     $prefixes = @(
-        "St. Mary's", "St. John's", "Riverside", "Oakwood", "Hillcrest",
-        "Greenfield", "Kingswood", "Elm Grove", "Highfield", "Maple Ridge",
-        "Brookside", "Westfield", "Northgate", "Southview", "Eastbrook"
+        "St. Mary's","St. John's","St. Peter's","St. Paul's","St. Anne's","St. Andrew's","St. George's",
+        "St. David's","St. Catherine's","St. Joseph's","St. Mark's","St. Luke's","St. Thomas'",
+        "St. Michael's","St. Francis","St. Augustine's","St. Benedict's","St. Christopher's",
+
+        "Oakwood","Cedar Ridge","Willowbank","Maple Grove","Pinecrest","Birchwood","Hawthorn",
+        "Chestnut Hill","Elm Valley","Riverbank","Lakeside","Hillcrest","Greenfield","Meadowbrook",
+        "Springfield","Bluebell","Foxhill","Brackenwood","Fernwood","Hazelwood","Wheatfield",
+
+        "Kings Heath","Queens Park","Castle Hill","Stonebridge","Millbrook","Forest Edge",
+        "Harbour View","Valley View","Broadwater","Windermere","Thornhill","Ridgeway",
+        "Longmeadow","Sunnydale","Northgate","Southview","Eastbrook","Westfield","Brookside",
+
+        "Unity","Horizon","Aspire","Endeavour","Inspire","Pioneer","Discovery","Innovation",
+        "Momentum","Progress","Venture","Summit","Beacon","Pathway","Frontier","Evolution",
+
+        "STEM Academy","Performing Arts","Sports Leadership","Technology Institute","Digital Futures",
+        "Creative Arts","Engineering Centre","Science Hub","Sports Academy","Music Conservatory"
     )
 
     $suffixes = @(
-        "Primary School", "Academy", "Community School", "Preparatory School",
-        "Junior School", "Infant School", "College", "School"
+        "Primary School","Academy","Community School","Preparatory School","Junior School",
+        "Infant School","College","School","High School","Grammar School","Comprehensive School",
+        "All-Through School","Specialist School","STEM Academy","Performing Arts School",
+        "Sports College","Sixth Form","Church of England School","Roman Catholic School",
+        "Independent School","Free School","Community College","Learning Centre","Education Campus"
     )
 
-    return "$($prefixes | Get-Random) $($suffixes | Get-Random)"
+    return "$($prefixes[(Get-Random -Min 0 -Max $prefixes.Count)]) $($suffixes[(Get-Random -Min 0 -Max $suffixes.Count)])"
 }
 
-function Get-RandomStreet {
-    $names = @(
-        "High Street", "Station Road", "Church Lane", "Victoria Road",
-        "Park Avenue", "London Road", "Main Street", "Mill Lane",
-        "The Crescent", "The Green", "School Road", "New Road"
-    )
-    return $names | Get-Random
-}
+$streets = @(
+    "High Street","Station Road","Church Lane","Victoria Road","Park Avenue","London Road",
+    "Main Street","Mill Lane","The Crescent","The Green","School Road","New Road",
+    "Bridge Street","Kingsway","Queens Road","Market Street","Grove Road","Manor Road"
+)
 
-function Get-RandomTown {
-    $towns = @(
-        "Birmingham", "Manchester", "Leeds", "Sheffield", "Bristol",
-        "Liverpool", "Nottingham", "Leicester", "Portsmouth", "Derby",
-        "Reading", "Plymouth", "Norwich", "Oxford", "Cambridge"
-    )
-    return $towns | Get-Random
-}
+$towns = @(
+    "Birmingham","Manchester","Leeds","Sheffield","Bristol","Liverpool","Nottingham",
+    "Leicester","Portsmouth","Derby","Reading","Plymouth","Norwich","Oxford","Cambridge",
+    "York","Exeter","Swansea","Cardiff","Newcastle","Sunderland","Coventry","Hull"
+)
+
+$postcodeAreas = @(
+    "AB","AL","B","BA","BB","BD","BH","BL","BN","BR","BS","BT","CA","CB","CF","CM","CO","CR",
+    "CT","CV","CW","DA","DD","DE","DG","DH","DL","DN","DT","DY","E","EC","EH","EN","EX","FK",
+    "FY","G","GL","GU","HA","HD","HG","HP","HR","HS","HU","HX","IG","IP","IV","KA","KT","KW",
+    "KY","L","LA","LD","LE","LL","LN","LS","LU","M","ME","MK","ML","N","NE","NG","NN","NP",
+    "NR","NW","OL","OX","PA","PE","PH","PL","PO","PR","RG","RH","RM","S","SA","SE","SG","SK",
+    "SL","SM","SN","SO","SP","SR","SS","ST","SW","SY","TA","TD","TF","TN","TQ","TR","TS","TW",
+    "UB","W","WA","WC","WD","WF","WN","WR","WS","WV","YO","ZE"
+)
 
 function Get-RandomPostcode {
-    $areas = @(
-        "AB","AL","B","BA","BB","BD","BH","BL","BN","BR","BS","BT","CA","CB","CF","CM","CO","CR","CT","CV","CW","DA","DD","DE","DG","DH","DL","DN","DT","DY","E","EC","EH","EN","EX","FK","FY","G","GL","GU","HA","HD","HG","HP","HR","HS","HU","HX","IG","IP","IV","KA","KT","KW","KY","L","LA","LD","LE","LL","LN","LS","LU","M","ME","MK","ML","N","NE","NG","NN","NP","NR","NW","OL","OX","PA","PE","PH","PL","PO","PR","RG","RH","RM","S","SA","SE","SG","SK","SL","SM","SN","SO","SP","SR","SS","ST","SW","SY","TA","TD","TF","TN","TQ","TR","TS","TW","UB","W","WA","WC","WD","WF","WN","WR","WS","WV","YO","ZE"
-    )
-
-    $area = $areas | Get-Random
-    $district = Get-Random -InputObject @(1..9)
-    $sector = Get-Random -InputObject @(1..9)
+    $area = $postcodeAreas[(Get-Random -Min 0 -Max $postcodeAreas.Count)]
+    $district = Get-Random -Min 1 -Max 10
+    $sector = Get-Random -Min 1 -Max 10
     $unit = -join ((65..90 | Get-Random -Count 2) | ForEach-Object {[char]$_})
-
     return "$area$district $sector$unit"
 }
 
-# ============================
-# Extensions
-# ============================
-$sql += @"
--- Enable pg_trgm extension for fuzzy search
-CREATE EXTENSION IF NOT EXISTS pg_trgm;
-"@
+function Get-RandomTelephone {
+    switch (Get-Random -Min 1 -Max 5) {
+        1 { return "01{0:D3}{1:D6}" -f (Get-Random -Min 100 -Max 999), (Get-Random -Min 100000 -Max 999999) }
+        2 { return "02{0:D2}{1:D4}{2:D4}" -f (Get-Random -Min 10 -Max 99), (Get-Random -Min 1000 -Max 9999), (Get-Random -Min 1000 -Max 9999) }
+        3 { return "07{0:D3}{1:D6}" -f (Get-Random -Min 100 -Max 999), (Get-Random -Min 100000 -Max 999999) }
+        4 { return "44{0:D9}" -f (Get-Random -Min 100000000 -Max 999999999) }
+    }
+}
+
+function Get-RandomWebsite($name) {
+    $slug = $name.ToLower() -replace '[^a-z0-9]+','-'
+    return "https://$slug.sch.uk"
+}
 
 # ============================
-# Lookup tables
+# WRITE DIRECTLY TO FILE
 # ============================
-$sql += @"
--- Lookup table seed data
 
-INSERT INTO EstablishmentType (name) VALUES
+$writer = [System.IO.StreamWriter]::new($seedPath, $false, [System.Text.Encoding]::UTF8)
+
+$writer.WriteLine("-- AUTO-GENERATED SEED FILE")
+$writer.WriteLine("-- Generated: $(Get-Date -Format o)")
+$writer.WriteLine("")
+
+$writer.WriteLine("CREATE EXTENSION IF NOT EXISTS pg_trgm;")
+$writer.WriteLine("")
+
+$writer.WriteLine("INSERT INTO EstablishmentType (name) VALUES
 ('Academy'),
 ('Community school'),
 ('Voluntary aided school'),
 ('British schools overseas')
-ON CONFLICT DO NOTHING;
+ON CONFLICT DO NOTHING;")
 
-INSERT INTO EducationPhase (name) VALUES
+$writer.WriteLine("INSERT INTO EducationPhase (name) VALUES
 ('Primary'),
 ('Secondary'),
 ('Special')
-ON CONFLICT DO NOTHING;
+ON CONFLICT DO NOTHING;")
 
-INSERT INTO EstablishmentStatus (name) VALUES
+$writer.WriteLine("INSERT INTO EstablishmentStatus (name) VALUES
 ('Closed'),
 ('Open')
-ON CONFLICT DO NOTHING;
-"@
+ON CONFLICT DO NOTHING;")
 
-# ============================
-# Establishment Group Types
-# ============================
-$sql += @"
-INSERT INTO EstablishmentGroupType (code, name) VALUES
+$writer.WriteLine("INSERT INTO EstablishmentGroupType (code, name) VALUES
 ('MAT', 'Multi-Academy Trust'),
 ('FED', 'Federation'),
 ('INT', 'International Group')
-ON CONFLICT DO NOTHING;
-"@
+ON CONFLICT DO NOTHING;")
 
 # ============================
-# Establishments
+# ESTABLISHMENTS
 # ============================
-$establishmentCount = 10000
 
-$sql += "-- Establishment seed data"
-$sql += "INSERT INTO Establishment (URN, EstablishmentName, EstablishmentTypeId, EducationPhaseId, SchoolWebsite, TelephoneNum, Street, Town, Postcode, EstablishmentStatusId) VALUES"
+$establishmentCount = 100000
 
-$estRows = @()
+$writer.WriteLine("INSERT INTO Establishment (URN, EstablishmentName, EstablishmentTypeId, EducationPhaseId, SchoolWebsite, TelephoneNum, Street, Town, Postcode, EstablishmentStatusId) VALUES")
 
 for ($i = 1; $i -le $establishmentCount; $i++) {
 
-    $urn = 100000 + $i  # Always 6 digits
+    if ($i % 1000 -eq 0) {
+        Write-Host "Generated $i establishments..."
+    }
 
-    $name = Escape-SqlLiteral (Get-RandomSchoolName)
-    $street = Escape-SqlLiteral (Get-RandomStreet)
-    $town = Escape-SqlLiteral (Get-RandomTown)
+    $urn = 100000 + $i
+    $name = Get-RandomSchoolName
+    $escapedName = Escape-SqlLiteral $name
+
+    $street = Escape-SqlLiteral ($streets[(Get-Random -Min 0 -Max $streets.Count)])
+    $town = Escape-SqlLiteral ($towns[(Get-Random -Min 0 -Max $towns.Count)])
     $postcode = Escape-SqlLiteral (Get-RandomPostcode)
+    $website = Escape-SqlLiteral (Get-RandomWebsite $name)
+    $telephone = Escape-SqlLiteral (Get-RandomTelephone)
 
-    # Random type (1–4)
-    $typeId = Get-Random -Minimum 1 -Maximum 5
+    $typeId = Get-Random -Min 1 -Max 5
+    $phaseId = Get-Random -Min 1 -Max 4
+    $statusId = if ((Get-Random -Min 1 -Max 100) -le 80) { 2 } else { 1 }
 
-    # Random phase (1–3)
-    $phaseId = Get-Random -Minimum 1 -Maximum 4
+    $line = "($urn, '$escapedName', $typeId, $phaseId, '$website', '$telephone', '$street', '$town', '$postcode', $statusId)"
 
-    # Weighted status: 80% Open (2), 20% Closed (1)
-    $statusId = if ((Get-Random -Minimum 1 -Maximum 100) -le 80) { 2 } else { 1 }
-
-    $estRows += "($urn, '$name', $typeId, $phaseId, NULL, NULL, '$street', '$town', '$postcode', $statusId)"
+    if ($i -lt $establishmentCount) {
+        $writer.WriteLine("$line,")
+    } else {
+        $writer.WriteLine("$line;")
+    }
 }
 
-$sql += ($estRows -join ",`n") + ";"
-
 # ============================
-# Establishment Groups
+# GROUPS
 # ============================
-$groupCount = 10000
 
-$sql += "-- Establishment Group seed data"
-$sql += "INSERT INTO EstablishmentGroup (id, name, type_code) VALUES"
+$groupCount = 100000
 
-$groupRows = @()
+$writer.WriteLine("INSERT INTO EstablishmentGroup (id, name, type_code) VALUES")
 
 for ($i = 1; $i -le $groupCount; $i++) {
+
+    if ($i % 1000 -eq 0) {
+        Write-Host "Generated $i groups..."
+    }
+
     $gid = 10000 + $i
-    $gname = Escape-SqlLiteral "Group $i"
+    $gname = "Group $i"
 
     $type = switch ($i % 3) {
         0 { "MAT" }
@@ -168,33 +193,44 @@ for ($i = 1; $i -le $groupCount; $i++) {
         2 { "INT" }
     }
 
-    $groupRows += "($gid, '$gname', '$type')"
+    $line = "($gid, '$gname', '$type')"
+
+    if ($i -lt $groupCount) {
+        $writer.WriteLine("$line,")
+    } else {
+        $writer.WriteLine("$line;")
+    }
 }
 
-$sql += ($groupRows -join ",`n") + ";"
-
 # ============================
-# GroupLink
+# GROUP LINKS
 # ============================
-$sql += "-- GroupLink seed data"
-$sql += "INSERT INTO GroupLink (group_id, urn) VALUES"
 
-$linkRows = @()
+$writer.WriteLine("INSERT INTO GroupLink (group_id, urn) VALUES")
 
 for ($i = 1; $i -le $groupCount; $i++) {
+
+    if ($i % 1000 -eq 0) {
+        Write-Host "Generated $i group links..."
+    }
+
     $gid = 10000 + $i
     $urn = 100000 + $i
-    $linkRows += "($gid, $urn)"
+
+    $line = "($gid, $urn)"
+
+    if ($i -lt $groupCount) {
+        $writer.WriteLine("$line,")
+    } else {
+        $writer.WriteLine("$line;")
+    }
 }
 
-$sql += ($linkRows -join ",`n") + ";"
-
 # ============================
-# Indexes
+# INDEXES
 # ============================
-$sql += @"
--- Indexes required for search
 
+$writer.WriteLine("
 CREATE INDEX IF NOT EXISTS idx_establishment_urn
     ON Establishment (URN);
 
@@ -203,11 +239,8 @@ CREATE INDEX IF NOT EXISTS idx_establishment_name_trgm
 
 CREATE INDEX IF NOT EXISTS idx_establishment_town_trgm
     ON Establishment USING gin (Town gin_trgm_ops);
-"@
+")
 
-# ============================
-# Write file
-# ============================
-$sql -join "`n" | Set-Content -Path $seedPath -Encoding UTF8
+$writer.Close()
 
 Write-Host "Seed file generated at $seedPath"
