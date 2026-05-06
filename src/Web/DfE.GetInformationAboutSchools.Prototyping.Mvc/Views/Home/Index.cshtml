@@ -3,6 +3,10 @@
 }
 
 <div class="container mt-5" style="max-width: 650px;">
+
+    <!-- ============================= -->
+    <!-- FUZZY TYPEAHEAD SEARCH        -->
+    <!-- ============================= -->
     <h2 class="mb-3">Fuzzy Type‑Ahead Search</h2>
     <p class="text-muted mb-4">
         Start typing a <strong>URN</strong>, <strong>school name</strong>, or <strong>location</strong>.
@@ -27,6 +31,9 @@
 
     <hr class="my-5" />
 
+    <!-- ============================= -->
+    <!-- FILTERED SEARCH               -->
+    <!-- ============================= -->
     <h2 class="mb-3">Filtered Search</h2>
 
     <div class="row g-3">
@@ -56,17 +63,29 @@
         </div>
     </div>
 
+    <!-- ============================= -->
+    <!-- FILTERED RESULTS + PAGINATION -->
+    <!-- ============================= -->
     <div class="mt-4">
-        <h5>Filtered Results</h5>
+
+        <h5 class="d-flex justify-content-between align-items-center">
+            <span>Filtered Results</span>
+            <span id="resultsSummary" class="text-muted small"></span>
+        </h5>
+
         <ul id="filteredResults" class="list-group"></ul>
+
+        <nav class="mt-3">
+            <ul id="pagination" class="pagination"></ul>
+        </nav>
     </div>
 </div>
 
 @section Scripts {
     <script>
-        // -------------------------------
-        // FUZZY TYPEAHEAD
-        // -------------------------------
+        // ============================================================
+        // FUZZY TYPEAHEAD SEARCH
+        // ============================================================
         const searchBox = document.getElementById("searchBox");
         const resultsContainer = document.getElementById("resultsContainer");
         const results = document.getElementById("results");
@@ -74,7 +93,6 @@
 
         searchBox.addEventListener("input", () => {
             const term = searchBox.value.trim();
-
             clearTimeout(debounceTimer);
 
             if (term.length === 0) {
@@ -124,11 +142,18 @@
             }
         });
 
-        // -------------------------------
-        // FILTERED SEARCH (MULTI-SELECT)
-        // -------------------------------
-        document.getElementById("runFilter").addEventListener("click", () => {
+        // ============================================================
+        // FILTERED SEARCH WITH PAGINATION
+        // ============================================================
+        let currentPage = 1;
+        const pageSize = 20;
 
+        document.getElementById("runFilter").addEventListener("click", () => {
+            currentPage = 1;
+            runFilteredSearch(currentPage);
+        });
+
+        function runFilteredSearch(page) {
             const statuses = [...document.querySelectorAll("input[name='status']:checked")]
                 .map(cb => cb.value);
 
@@ -136,34 +161,120 @@
                 .map(cb => cb.value);
 
             const params = new URLSearchParams();
-
             statuses.forEach(s => params.append("statuses", s));
             types.forEach(t => params.append("types", t));
+            params.append("pageNumber", page);
+            params.append("pageSize", pageSize);
 
             fetch(`/filtered?${params.toString()}`)
                 .then(r => r.json())
                 .then(data => {
-                    const list = document.getElementById("filteredResults");
-                    list.innerHTML = "";
-
-                    data.results.forEach(item => {
-                        const li = document.createElement("li");
-                        li.className = "list-group-item";
-
-                        li.innerHTML = `
-                            <div class="fw-bold">${item.name}</div>
-                            <div class="text-muted small">
-                                URN: ${item.urn}
-                                &nbsp;•&nbsp; ${item.type}
-                                &nbsp;•&nbsp; ${item.phase}
-                                &nbsp;•&nbsp; ${item.status}
-                                &nbsp;•&nbsp; ${item.town ?? ""}
-                            </div>
-                        `;
-
-                        list.appendChild(li);
-                    });
+                    renderResults(data.results);
+                    renderPagination(data.totalCount, page);
+                    renderSummary(data.totalCount, page, data.results.length);
                 });
-        });
+        }
+
+        function renderResults(items) {
+            const list = document.getElementById("filteredResults");
+            list.innerHTML = "";
+
+            items.forEach(item => {
+                const li = document.createElement("li");
+                li.className = "list-group-item";
+
+                li.innerHTML = `
+                    <div class="fw-bold">${item.name}</div>
+                    <div class="text-muted small">
+                        URN: ${item.urn}
+                        &nbsp;•&nbsp; ${item.type}
+                        &nbsp;•&nbsp; ${item.phase}
+                        &nbsp;•&nbsp; ${item.status}
+                        &nbsp;•&nbsp; ${item.town ?? ""}
+                    </div>
+                `;
+
+                list.appendChild(li);
+            });
+        }
+
+        // ============================================================
+        // INLINE RESULTS SUMMARY
+        // ============================================================
+        function renderSummary(totalCount, currentPage, pageCount) {
+            const summary = document.getElementById("resultsSummary");
+
+            if (totalCount === 0) {
+                summary.textContent = "No results found";
+                return;
+            }
+
+            const start = (currentPage - 1) * pageSize + 1;
+            const end = start + pageCount - 1;
+
+            summary.textContent = `Showing ${start}–${end} of ${totalCount}`;
+        }
+
+        // ============================================================
+        // SIMPLE PAGINATION WITH ELLIPSES
+        // ============================================================
+        function renderPagination(totalCount, currentPage) {
+            const totalPages = Math.ceil(totalCount / pageSize);
+            const pagination = document.getElementById("pagination");
+            pagination.innerHTML = "";
+
+            if (totalPages <= 1) return;
+
+            function addPage(number, label = null, disabled = false, active = false) {
+                const li = document.createElement("li");
+                li.className = `page-item ${disabled ? "disabled" : ""} ${active ? "active" : ""}`;
+                li.innerHTML = `<a class="page-link" href="#">${label ?? number}</a>`;
+                if (!disabled && !active) {
+                    li.onclick = () => {
+                        currentPage = number;
+                        runFilteredSearch(currentPage);
+                    };
+                }
+                pagination.appendChild(li);
+            }
+
+            function addEllipsis() {
+                const li = document.createElement("li");
+                li.className = "page-item disabled";
+                li.innerHTML = `<span class="page-link">…</span>`;
+                pagination.appendChild(li);
+            }
+
+            // Previous
+            addPage(currentPage - 1, "Previous", currentPage === 1);
+
+            // First page
+            addPage(1, "1", false, currentPage === 1);
+
+            // Ellipsis after first page
+            if (currentPage > 3) addEllipsis();
+
+            // Page before current
+            if (currentPage - 1 > 1) addPage(currentPage - 1);
+
+            // Current page
+            if (currentPage !== 1 && currentPage !== totalPages) {
+                addPage(currentPage, `${currentPage}`, false, true);
+            }
+
+            // Page after current
+            if (currentPage + 1 < totalPages) addPage(currentPage + 1);
+
+            // Ellipsis before last page
+            if (currentPage < totalPages - 2) addEllipsis();
+
+            // Last page
+            if (totalPages > 1) {
+                addPage(totalPages, `${totalPages}`, false, currentPage === totalPages);
+            }
+
+            // Next
+            addPage(currentPage + 1, "Next", currentPage === totalPages);
+        }
     </script>
 }

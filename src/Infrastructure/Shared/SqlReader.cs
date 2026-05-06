@@ -1,8 +1,9 @@
-﻿using System.Data;
-using System.Data.Common;
-using Dfe.Data.Common.Infrastructure.Persistence.Sql.Dapper.Handlers;
+﻿using Dfe.Data.Common.Infrastructure.Persistence.Sql.Dapper.Handlers;
 using Dfe.Data.Common.Infrastructure.Persistence.Sql.Dapper.Handlers.Query;
+using Dfe.Data.Common.Infrastructure.Persistence.Sql.Dapper.Handlers.Query.Response;
 using Dfe.Data.Common.Infrastructure.Persistence.Sql.Dapper.Providers.Database.Context;
+using System.Data;
+using System.Data.Common;
 
 namespace DfE.GetInformationAboutSchools.Prototyping.Infrastructure.Shared;
 
@@ -108,5 +109,59 @@ public sealed class SqlReader : ISqlReader
         await tx.CommitAsync(cancellationToken);
 
         return result;
+    }
+
+    private async Task<IMultiResultReader> ExecuteMultipleAsync(
+    string sql,
+    object? parameters,
+    CancellationToken cancellationToken)
+    {
+        var tx = await _dbContextProvider.BeginTransactionAsync(
+            IsolationLevel.ReadCommitted,
+            cancellationToken);
+
+        SqlRequestOptions options = new()
+        {
+            Type = CommandType.Text,
+            Parameters = parameters
+        };
+
+        var grid = await _dbContextProvider.SqlQueryHandler
+            .QueryMultipleAsync(sql, tx, options, cancellationToken);
+
+        return new MultiResultReader(grid, tx);
+    }
+
+
+    public Task<IMultiResultReader> QueryMultipleAsync(
+     string sql,
+     object? parameters,
+     CancellationToken cancellationToken)
+    {
+        return ExecuteMultipleAsync(sql, parameters, cancellationToken);
+    }
+
+
+
+    internal sealed class MultiResultReader : IMultiResultReader
+    {
+        private readonly IDbGridReader _grid;
+        private readonly DbTransaction _transaction;
+
+        public MultiResultReader(IDbGridReader grid, DbTransaction transaction)
+        {
+            _grid = grid;
+            _transaction = transaction;
+        }
+
+        public Task<T> ReadSingleAsync<T>() => _grid.ReadSingleAsync<T>();
+        public Task<IEnumerable<T>> ReadAsync<T>() => _grid.ReadAsync<T>();
+
+        public async ValueTask DisposeAsync()
+        {
+            await _grid.DisposeAsync();        // <-- MUST close reader first
+            await _transaction.CommitAsync();  // <-- Safe now
+            await _transaction.DisposeAsync();
+        }
     }
 }

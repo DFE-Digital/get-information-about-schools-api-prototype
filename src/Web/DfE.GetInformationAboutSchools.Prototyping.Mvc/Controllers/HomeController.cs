@@ -76,7 +76,7 @@ namespace DfE.GetInformationAboutSchools.Prototyping.Mvc.Controllers
                 return Ok(new
                 {
                     results = Array.Empty<object>(),
-                    totalCount = 0
+                    totalCount = result.Model?.Filtered?.TotalCount
                 });
             }
 

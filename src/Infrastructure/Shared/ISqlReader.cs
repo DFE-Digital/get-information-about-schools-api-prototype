@@ -1,4 +1,6 @@
-﻿namespace DfE.GetInformationAboutSchools.Prototyping.Infrastructure.Shared;
+﻿using System.Data.Common;
+
+namespace DfE.GetInformationAboutSchools.Prototyping.Infrastructure.Shared;
 
 /// <summary>
 /// Provides read‑only access to SQL data using parameterised queries.
@@ -29,5 +31,17 @@ public interface ISqlReader
         string sql,
         object? parameters,
         CancellationToken cancellationToken);
+
+
+    // NEW: multi‑result support
+    Task<IMultiResultReader> QueryMultipleAsync(
+         string sql,
+         object? parameters,
+         CancellationToken cancellationToken);
 }
 
+public interface IMultiResultReader : IAsyncDisposable
+{
+    Task<T> ReadSingleAsync<T>();
+    Task<IEnumerable<T>> ReadAsync<T>();
+}

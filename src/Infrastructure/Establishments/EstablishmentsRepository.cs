@@ -194,43 +194,42 @@ public sealed class EstablishmentsRepository : IEstablishmentsRepository
     {
         int offset = (criteria.PageNumber - 1) * criteria.PageSize;
 
-        const string FilteredSql =
+        const string Sql =
         """
-        SELECT
-            e.URN,
-            e.EstablishmentName,
-            et.name AS EstablishmentType,
-            ep.name AS EducationPhase,
-            e.SchoolWebsite,
-            e.TelephoneNum,
-            e.Street,
-            e.Town,
-            e.Postcode,
-            es.name AS EstablishmentStatus
-        FROM Establishment AS e
-        INNER JOIN EstablishmentType et ON e.EstablishmentTypeId = et.id
-        INNER JOIN EducationPhase ep ON e.EducationPhaseId = ep.id
-        INNER JOIN EstablishmentStatus es ON e.EstablishmentStatusId = es.id
-        WHERE
-            (
-                @Statuses IS NULL
-                OR cardinality(@Statuses) = 0
-                OR es.name = ANY(@Statuses::text[])
-            )
-            AND
-            (
-                @Types IS NULL
-                OR cardinality(@Types) = 0
-                OR et.name = ANY(@Types::text[])
-            )
-        ORDER BY 
-            e.EstablishmentName ASC,
-            e.URN ASC
-        OFFSET @Offset LIMIT @PageSize;
-        """;
+    -- First result set: total count
+    SELECT COUNT(*)
+    FROM Establishment AS e
+    INNER JOIN EstablishmentType et ON e.EstablishmentTypeId = et.id
+    INNER JOIN EducationPhase ep ON e.EducationPhaseId = ep.id
+    INNER JOIN EstablishmentStatus es ON e.EstablishmentStatusId = es.id
+    WHERE
+        (@Statuses IS NULL OR cardinality(@Statuses) = 0 OR es.name = ANY(@Statuses::text[]))
+        AND
+        (@Types IS NULL OR cardinality(@Types) = 0 OR et.name = ANY(@Types::text[]));
 
-
-
+    -- Second result set: paged results
+    SELECT
+        e.URN,
+        e.EstablishmentName,
+        et.name AS EstablishmentType,
+        ep.name AS EducationPhase,
+        e.SchoolWebsite,
+        e.TelephoneNum,
+        e.Street,
+        e.Town,
+        e.Postcode,
+        es.name AS EstablishmentStatus
+    FROM Establishment AS e
+    INNER JOIN EstablishmentType et ON e.EstablishmentTypeId = et.id
+    INNER JOIN EducationPhase ep ON e.EducationPhaseId = ep.id
+    INNER JOIN EstablishmentStatus es ON e.EstablishmentStatusId = es.id
+    WHERE
+        (@Statuses IS NULL OR cardinality(@Statuses) = 0 OR es.name = ANY(@Statuses::text[]))
+        AND
+        (@Types IS NULL OR cardinality(@Types) = 0 OR et.name = ANY(@Types::text[]))
+    ORDER BY e.EstablishmentName ASC, e.URN ASC
+    OFFSET @Offset LIMIT @PageSize;
+    """;
 
         var parameters = new
         {
@@ -240,17 +239,17 @@ public sealed class EstablishmentsRepository : IEstablishmentsRepository
             PageSize = criteria.PageSize
         };
 
-        var dtos = await _sqlReader.QueryAsync<EstablishmentDataTransferObject>(
-            FilteredSql,
-            parameters,
-            cancellationToken);
+        await using var multi = await _sqlReader.QueryMultipleAsync(Sql, parameters, cancellationToken);
 
-        var results = _establishmentsMapper.Map(dtos);
+        int totalCount = await multi.ReadSingleAsync<int>();
+        var dtos = await multi.ReadAsync<EstablishmentDataTransferObject>();
+
+        IReadOnlyCollection<Establishment> results = _establishmentsMapper.Map(dtos);
 
         return new EstablishmentFilterSearchResponse
         {
             Results = results,
-            TotalCount = 0,
+            TotalCount = totalCount,
             Facets = new EstablishmentFacetCounts
             {
                 StatusCounts = new Dictionary<string, int>(),
@@ -258,6 +257,7 @@ public sealed class EstablishmentsRepository : IEstablishmentsRepository
             }
         };
     }
+
 
 
 }
