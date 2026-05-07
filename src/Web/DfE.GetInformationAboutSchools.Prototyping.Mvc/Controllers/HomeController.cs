@@ -53,11 +53,11 @@ namespace DfE.GetInformationAboutSchools.Prototyping.Mvc.Controllers
         // -------------------------------
         [HttpGet("/filtered")]
         public async Task<IActionResult> Filtered(
-            [FromQuery] string[]? statuses,
-            [FromQuery] string[]? types,
-            [FromQuery] int pageNumber = 1,
-            [FromQuery] int pageSize = 20,
-            CancellationToken cancellationToken = default)
+    [FromQuery] string[]? statuses,
+    [FromQuery] string[]? types,
+    [FromQuery] int pageNumber = 1,
+    [FromQuery] int pageSize = 20,
+    CancellationToken cancellationToken = default)
         {
             var criteria = new EstablishmentFilterCriteria
             {
@@ -76,7 +76,12 @@ namespace DfE.GetInformationAboutSchools.Prototyping.Mvc.Controllers
                 return Ok(new
                 {
                     results = Array.Empty<object>(),
-                    totalCount = result.Model?.Filtered?.TotalCount
+                    totalCount = result.Model?.Filtered?.TotalCount ?? 0,
+                    facets = new
+                    {
+                        statusCounts = new Dictionary<string, int>(),
+                        typeCounts = new Dictionary<string, int>()
+                    }
                 });
             }
 
@@ -91,11 +96,17 @@ namespace DfE.GetInformationAboutSchools.Prototyping.Mvc.Controllers
                     status = e.BasicDetails.Status,
                     town = e.Address.Town
                 }),
-                totalCount = result.Model.Filtered.TotalCount
+                totalCount = result.Model.Filtered.TotalCount,
+                facets = new
+                {
+                    statusCounts = result.Model.Filtered.Facets.StatusCounts,
+                    typeCounts = result.Model.Filtered.Facets.TypeCounts
+                }
             };
 
             return Ok(response);
         }
+
 
         public IActionResult Privacy() => View();
 

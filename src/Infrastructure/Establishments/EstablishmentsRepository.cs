@@ -188,48 +188,71 @@ public sealed class EstablishmentsRepository : IEstablishmentsRepository
 
 
     public async Task<EstablishmentFilterSearchResponse> SearchFilteredAsync(
-    EstablishmentFilterCriteria criteria,
-    double similarityThreshold,
-    CancellationToken cancellationToken)
+        EstablishmentFilterCriteria criteria,
+        double similarityThreshold,
+        CancellationToken cancellationToken)
     {
         int offset = (criteria.PageNumber - 1) * criteria.PageSize;
 
         const string Sql =
-        """
-    -- First result set: total count
-    SELECT COUNT(*)
-    FROM Establishment AS e
-    INNER JOIN EstablishmentType et ON e.EstablishmentTypeId = et.id
-    INNER JOIN EducationPhase ep ON e.EducationPhaseId = ep.id
-    INNER JOIN EstablishmentStatus es ON e.EstablishmentStatusId = es.id
-    WHERE
-        (@Statuses IS NULL OR cardinality(@Statuses) = 0 OR es.name = ANY(@Statuses::text[]))
-        AND
-        (@Types IS NULL OR cardinality(@Types) = 0 OR et.name = ANY(@Types::text[]));
+                """
+                        -- 1. Total count
+            SELECT COUNT(*)
+            FROM Establishment AS e
+            INNER JOIN EstablishmentType et ON e.EstablishmentTypeId = et.id
+            INNER JOIN EducationPhase ep ON e.EducationPhaseId = ep.id
+            INNER JOIN EstablishmentStatus es ON e.EstablishmentStatusId = es.id
+            WHERE
+                (@Statuses IS NULL OR cardinality(@Statuses) = 0 OR es.name = ANY(@Statuses::text[]))
+                AND
+                (@Types IS NULL OR cardinality(@Types) = 0 OR et.name = ANY(@Types::text[]));
 
-    -- Second result set: paged results
-    SELECT
-        e.URN,
-        e.EstablishmentName,
-        et.name AS EstablishmentType,
-        ep.name AS EducationPhase,
-        e.SchoolWebsite,
-        e.TelephoneNum,
-        e.Street,
-        e.Town,
-        e.Postcode,
-        es.name AS EstablishmentStatus
-    FROM Establishment AS e
-    INNER JOIN EstablishmentType et ON e.EstablishmentTypeId = et.id
-    INNER JOIN EducationPhase ep ON e.EducationPhaseId = ep.id
-    INNER JOIN EstablishmentStatus es ON e.EstablishmentStatusId = es.id
-    WHERE
-        (@Statuses IS NULL OR cardinality(@Statuses) = 0 OR es.name = ANY(@Statuses::text[]))
-        AND
-        (@Types IS NULL OR cardinality(@Types) = 0 OR et.name = ANY(@Types::text[]))
-    ORDER BY e.EstablishmentName ASC, e.URN ASC
-    OFFSET @Offset LIMIT @PageSize;
-    """;
+            -- 2. Paged results
+            SELECT
+                e.URN,
+                e.EstablishmentName,
+                et.name AS EstablishmentType,
+                ep.name AS EducationPhase,
+                e.SchoolWebsite,
+                e.TelephoneNum,
+                e.Street,
+                e.Town,
+                e.Postcode,
+                es.name AS EstablishmentStatus
+            FROM Establishment AS e
+            INNER JOIN EstablishmentType et ON e.EstablishmentTypeId = et.id
+            INNER JOIN EducationPhase ep ON e.EducationPhaseId = ep.id
+            INNER JOIN EstablishmentStatus es ON e.EstablishmentStatusId = es.id
+            WHERE
+                (@Statuses IS NULL OR cardinality(@Statuses) = 0 OR es.name = ANY(@Statuses::text[]))
+                AND
+                (@Types IS NULL OR cardinality(@Types) = 0 OR et.name = ANY(@Types::text[]))
+            ORDER BY e.EstablishmentName ASC, e.URN ASC
+            OFFSET @Offset LIMIT @PageSize;
+
+            -- 3. Status facet counts
+            SELECT es.name AS Status, COUNT(*)
+            FROM Establishment AS e
+            INNER JOIN EstablishmentStatus es ON e.EstablishmentStatusId = es.id
+            WHERE
+                (@Types IS NULL OR cardinality(@Types) = 0 OR e.EstablishmentTypeId IN (
+                    SELECT id FROM EstablishmentType WHERE name = ANY(@Types::text[])
+                ))
+            GROUP BY es.name
+            ORDER BY es.name;
+
+            -- 4. Type facet counts
+            SELECT et.name AS Type, COUNT(*)
+            FROM Establishment AS e
+            INNER JOIN EstablishmentType et ON e.EstablishmentTypeId = et.id
+            WHERE
+                (@Statuses IS NULL OR cardinality(@Statuses) = 0 OR e.EstablishmentStatusId IN (
+                    SELECT id FROM EstablishmentStatus WHERE name = ANY(@Statuses::text[])
+                ))
+            GROUP BY et.name
+            ORDER BY et.name;
+            
+            """;
 
         var parameters = new
         {
@@ -241,10 +264,20 @@ public sealed class EstablishmentsRepository : IEstablishmentsRepository
 
         await using var multi = await _sqlReader.QueryMultipleAsync(Sql, parameters, cancellationToken);
 
+        // 1. Total count
         int totalCount = await multi.ReadSingleAsync<int>();
-        var dtos = await multi.ReadAsync<EstablishmentDataTransferObject>();
 
+        // 2. Paged results
+        var dtos = await multi.ReadAsync<EstablishmentDataTransferObject>();
         IReadOnlyCollection<Establishment> results = _establishmentsMapper.Map(dtos);
+
+        // 3. Status facet counts
+        var statusRows = await multi.ReadAsync<(string Status, int Count)>();
+        var statusCounts = statusRows.ToDictionary(x => x.Status, x => x.Count);
+
+        // 4. Type facet counts
+        var typeRows = await multi.ReadAsync<(string Type, int Count)>();
+        var typeCounts = typeRows.ToDictionary(x => x.Type, x => x.Count);
 
         return new EstablishmentFilterSearchResponse
         {
@@ -252,12 +285,10 @@ public sealed class EstablishmentsRepository : IEstablishmentsRepository
             TotalCount = totalCount,
             Facets = new EstablishmentFacetCounts
             {
-                StatusCounts = new Dictionary<string, int>(),
-                TypeCounts = new Dictionary<string, int>()
+                StatusCounts = statusCounts,
+                TypeCounts = typeCounts
             }
         };
     }
-
-
 
 }
