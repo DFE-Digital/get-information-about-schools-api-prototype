@@ -131,7 +131,7 @@ jobs:
       id-token: write
       pull-requests: write
 
-   steps:
+    steps:
     - name: Deploy app to ${{ inputs.environment }}
       id: deploy_manual
       uses: DFE-Digital/github-actions/deploy-to-aks@master
